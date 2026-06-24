@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reactive Power Calculator | Engineering Tool</title>
+<style>
+/* ============================================================
+   Embedded Font: JetBrains Mono (subset) via data URI fallback
+   + system monospace/sans stack for full offline support
+============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ============================================================
+   Theme Variables — Light / Dark
+============================================================ */
+:root {
+  --bg-page:       #EEF2F7;
+  --bg-card:       #FFFFFF;
+  --bg-panel:      #F5F7FA;
+  --bg-result:     #0F2D4A;
+  --clr-primary:   #1A3A5C;
+  --clr-accent:    #2A7FE8;
+  --clr-accent2:   #F59E0B;
+  --clr-lagging:   #2A7FE8;
+  --clr-leading:   #10B981;
+  --txt-primary:   #0D1F33;
+  --txt-secondary: #4A637F;
+  --txt-muted:     #8EA3B8;
+  --border:        rgba(26,58,92,0.15);
+  --border-input:  rgba(26,58,92,0.25);
+  --shadow-card:   0 4px 24px rgba(26,58,92,0.12);
+  --radius-sm:     6px;
+  --radius-md:     10px;
+  --radius-lg:     16px;
+  --font-body:     'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:     'Consolas', 'Menlo', 'Courier New', monospace;
+  --transition:    0.18s ease;
+}
+[data-theme="dark"] {
+  --bg-page:       #0B1927;
+  --bg-card:       #132337;
+  --bg-panel:      #0F1E2E;
+  --bg-result:     #081624;
+  --clr-primary:   #5BA3E8;
+  --clr-accent:    #5BA3E8;
+  --clr-accent2:   #FBB040;
+  --txt-primary:   #E8F1FA;
+  --txt-secondary: #7DAAD4;
+  --txt-muted:     #4A6E8E;
+  --border:        rgba(91,163,232,0.12);
+  --border-input:  rgba(91,163,232,0.25);
+  --shadow-card:   0 4px 24px rgba(0,0,0,0.35);
+}
+
+/* ============================================================
+   Base Layout
+============================================================ */
+body {
+  font-family: var(--font-body);
+  background: var(--bg-page);
+  color: var(--txt-primary);
+  min-height: 100vh;
+  padding: 2rem 1rem 4rem;
+  transition: background var(--transition), color var(--transition);
+  -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 860px; margin: 0 auto; }
+
+/* ============================================================
+   Top Bar
+============================================================ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-icon {
+  width: 36px; height: 36px;
+  background: var(--clr-accent);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-icon svg { width: 20px; height: 20px; fill: #fff; }
+.brand-name {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--txt-secondary);
+}
+.topbar-controls { display: flex; gap: 8px; }
+
+/* ============================================================
+   Toggle Buttons
+============================================================ */
+.toggle-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--txt-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.toggle-btn:hover { background: var(--bg-panel); color: var(--clr-accent); border-color: var(--clr-accent); }
+
+/* ============================================================
+   Page Header
+============================================================ */
+.page-header { text-align: center; margin-bottom: 2rem; }
+.page-header h1 {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--txt-primary);
+  letter-spacing: -0.02em;
+}
+.page-header p {
+  margin-top: 0.4rem;
+  font-size: 0.88rem;
+  color: var(--txt-secondary);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(42,127,232,0.10);
+  color: var(--clr-accent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border-radius: 100px;
+  margin-bottom: 10px;
+}
+.badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--clr-accent);
+}
+
+/* ============================================================
+   Card
+============================================================ */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  padding: 2rem;
+  margin-bottom: 1.25rem;
+  transition: background var(--transition), border-color var(--transition);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.card-header-icon {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(42,127,232,0.10);
+  display: flex; align-items: center; justify-content: center;
+}
+.card-header-icon svg { width: 14px; height: 14px; stroke: var(--clr-accent); fill: none; }
+.card-header h2 {
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--txt-secondary);
+}
+
+/* ============================================================
+   Form
+============================================================ */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--txt-secondary);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.form-label .unit { font-weight: 400; color: var(--txt-muted); margin-left: 4px; }
+.input-wrapper { position: relative; }
+.form-input {
+  width: 100%;
+  padding: 10px 54px 10px 14px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--txt-primary);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 400;
+  outline: none;
+  transition: all var(--transition);
+  -moz-appearance: textfield;
+}
+.form-input::-webkit-outer-spin-button,
+.form-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.form-input::placeholder { color: var(--txt-muted); font-size: 0.88rem; }
+.form-input:focus {
+  border-color: var(--clr-accent);
+  box-shadow: 0 0 0 3px rgba(42,127,232,0.12);
+  background: var(--bg-card);
+}
+.form-input.error { border-color: #EF4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.12); }
+.input-unit {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--txt-muted);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+.error-msg {
+  font-size: 0.72rem;
+  color: #EF4444;
+  font-family: var(--font-mono);
+  min-height: 14px;
+  display: flex; align-items: center; gap: 4px;
+}
+.error-msg:not(:empty)::before { content: '⚠ '; }
+
+/* PF Mode Switcher */
+.pf-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 1.5rem;
+}
+.pf-mode-label {
+  font-family: var(--font-mono);
+  font-size: 0.70rem;
+  color: var(--txt-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 4px;
+  font-weight: 600;
+}
+.pf-mode-btn {
+  padding: 4px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border-input);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--txt-secondary);
+}
+.pf-mode-btn.lag.active  { background: var(--clr-lagging); color: #fff; border-color: var(--clr-lagging); }
+.pf-mode-btn.lead.active { background: var(--clr-leading); color: #fff; border-color: var(--clr-leading); }
+.pf-mode-btn:not(.active):hover { background: var(--bg-panel); }
+
+/* ============================================================
+   Action Buttons
+============================================================ */
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+  padding: 11px 24px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  display: flex; align-items: center; gap: 7px;
+}
+.btn-primary {
+  background: var(--clr-primary);
+  color: #fff;
+  border-color: var(--clr-primary);
+  flex: 1;
+  justify-content: center;
+}
+.btn-primary:hover { background: var(--clr-accent); border-color: var(--clr-accent); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-secondary {
+  background: transparent;
+  color: var(--txt-secondary);
+  border-color: var(--border-input);
+}
+.btn-secondary:hover { background: var(--bg-panel); color: var(--txt-primary); }
+
+/* ============================================================
+   Result Card
+============================================================ */
+.result-card {
+  background: var(--bg-result);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(91,163,232,0.2);
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.25rem;
+  display: none;
+  animation: fadeUp 0.3s ease;
+  transition: background var(--transition);
+}
+.result-card.visible { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.result-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 520px) { .result-grid { grid-template-columns: 1fr 1fr; } }
+.result-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 4px;
+}
+.result-value {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #fff;
+}
+.result-value .unit {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: rgba(255,255,255,0.45);
+  margin-left: 3px;
+}
+.result-value.highlight { color: var(--clr-accent2); font-size: 1.65rem; }
+
+/* Formula bar */
+.formula-bar {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.45);
+  border-left: 2px solid rgba(42,127,232,0.5);
+  letter-spacing: 0.02em;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+.formula-bar span { color: rgba(255,255,255,0.80); }
+
+/* PF badge */
+.pf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.pf-badge.lag  { background: rgba(42,127,232,0.2); color: #60A5FA; }
+.pf-badge.lead { background: rgba(16,185,129,0.2); color: #34D399; }
+
+/* Copy button */
+.copy-btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex; align-items: center; gap: 5px;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+.copy-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; }
+
+/* Power Triangle Diagram */
+.diagram-container {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.diagram-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 8px;
+}
+#power-diagram { width: 100%; max-width: 420px; display: block; margin: 0 auto; }
+
+/* ============================================================
+   Info Section
+============================================================ */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+@media (max-width: 560px) { .info-grid { grid-template-columns: 1fr; } }
+.info-tile {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  transition: background var(--transition);
+}
+.info-tile-header { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.info-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-p  { background: #F59E0B; }
+.dot-q  { background: #2A7FE8; }
+.dot-pf { background: #10B981; }
+.info-tile h3 {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--txt-secondary);
+}
+.info-tile p { font-size: 0.80rem; color: var(--txt-muted); line-height: 1.55; }
+.info-formula {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--clr-accent);
+  background: rgba(42,127,232,0.08);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  display: inline-block;
+}
+
+.warning-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+.warning-box svg { width: 16px; height: 16px; stroke: #F59E0B; fill: none; flex-shrink: 0; margin-top: 1px; }
+.warning-box p { font-size: 0.78rem; color: var(--txt-secondary); line-height: 1.5; }
+.warning-box p strong { color: var(--txt-primary); font-weight: 600; }
+
+/* ============================================================
+   Footer
+============================================================ */
+.footer {
+  text-align: center;
+  margin-top: 2.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.07em;
+  color: var(--txt-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ── Top Bar ─────────────────────────────────────── -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+      </div>
+      <span class="brand-name">EE Calc Suite</span>
+    </div>
+    <div class="topbar-controls">
+      <button class="toggle-btn" id="theme-btn" onclick="toggleTheme()">◐ Dark</button>
+    </div>
+  </div>
+
+  <!-- ── Page Header ───────────────────────────────── -->
+  <div class="page-header">
+    <div class="badge">Electrical Engineering Tool</div>
+    <h1>Reactive Power Calculator</h1>
+    <p>Calculate Reactive Power (Q) from Active Power (P) and Power Factor (PF) — Units: MW / MVAR / MVA</p>
+  </div>
+
+  <!-- ── Input Card ────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon">
+        <svg viewBox="0 0 24 24" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
+               M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <h2>Input Parameters</h2>
+    </div>
+
+    <!-- PF Mode (Lagging / Leading) -->
+    <div class="pf-mode-row">
+      <span class="pf-mode-label">PF Type:</span>
+      <button class="pf-mode-btn lag active" id="btn-lag"  onclick="setPFMode('lag')">Lagging</button>
+      <button class="pf-mode-btn lead"       id="btn-lead" onclick="setPFMode('lead')">Leading</button>
+    </div>
+
+    <div class="form-grid">
+      <!-- Active Power -->
+      <div class="form-group">
+        <label class="form-label" for="input-p">
+          Active Power<span class="unit">P</span>
+        </label>
+        <div class="input-wrapper">
+          <input class="form-input" type="number" id="input-p"
+                 placeholder="e.g. 100" min="0" step="any"
+                 oninput="clearError('p')">
+          <span class="input-unit">MW</span>
+        </div>
+        <span class="error-msg" id="err-p"></span>
+      </div>
+
+      <!-- Power Factor -->
+      <div class="form-group">
+        <label class="form-label" for="input-pf">
+          Power Factor<span class="unit">PF</span>
+        </label>
+        <div class="input-wrapper">
+          <input class="form-input" type="number" id="input-pf"
+                 placeholder="0.00 – 1.00" min="0" max="1" step="0.001"
+                 oninput="clearError('pf')">
+          <span class="input-unit">—</span>
+        </div>
+        <span class="error-msg" id="err-pf"></span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="calculate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="16"/>
+          <line x1="8"  y1="12" x2="16" y2="12"/>
+        </svg>
+        Calculate
+      </button>
+      <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+    </div>
+  </div>
+
+  <!-- ── Result Card ───────────────────────────────── -->
+  <div class="result-card" id="result-card">
+    <div class="result-header">
+      <span class="result-title">Calculation Result</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="pf-badge lag" id="pf-badge">LAGGING</span>
+        <button class="copy-btn" onclick="copyResult()">
+          <svg viewBox="0 0 24 24" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+          Copy
+        </button>
+      </div>
+    </div>
+
+    <!-- Primary Metrics Row -->
+    <div class="result-grid">
+      <div class="result-item">
+        <div class="result-label">Active Power</div>
+        <div class="result-value" id="res-p">—<span class="unit">MW</span></div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">Power Factor</div>
+        <div class="result-value" id="res-pf">—</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">Angle &#966;</div>
+        <div class="result-value" id="res-phi">—<span class="unit">°</span></div>
+      </div>
+
+      <!-- Reactive Power — spans full width -->
+      <div class="result-item"
+           style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,0.08);
+                  padding-top:1rem;margin-top:0.25rem;">
+        <div class="result-label" style="font-size:0.72rem;letter-spacing:0.12em;">
+          Reactive Power &nbsp; Q
+        </div>
+        <div class="result-value highlight" id="res-q">
+          —<span class="unit" style="font-size:0.9rem;">MVAR</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formula Bar -->
+    <div class="formula-bar">
+      &#966; = arccos(<span id="formula-pf">PF</span>) = <span id="formula-phi">&#966;°</span><br>
+      Q = P &times; tan(&#966;) = <span id="formula-p">P</span> MW &times; <span id="formula-tanphi">tan(&#966;)</span> = <span id="formula-result">Q</span> MVAR
+    </div>
+
+    <!-- Secondary Metrics -->
+    <div class="result-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0;">
+      <div class="result-item">
+        <div class="result-label">Apparent Power S</div>
+        <div class="result-value" style="font-size:1rem;" id="res-s">
+          —<span class="unit">MVA</span>
+        </div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">Q / S Ratio</div>
+        <div class="result-value" style="font-size:1rem;" id="res-ratio">
+          —<span class="unit">sin &#966;</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Power Triangle Diagram -->
+    <div class="diagram-container">
+      <div class="diagram-title">Power Triangle Diagram (P–Q–S)</div>
+      <svg id="power-diagram" viewBox="0 0 420 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- drawn by JS -->
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── Info Section ──────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon">
+        <svg viewBox="0 0 24 24" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8"  x2="12.01" y2="8"/>
+        </svg>
+      </div>
+      <h2>Technical Reference</h2>
+    </div>
+
+    <div class="info-grid">
+      <!-- P -->
+      <div class="info-tile">
+        <div class="info-tile-header">
+          <div class="info-dot dot-p"></div>
+          <h3>Active Power (P)</h3>
+        </div>
+        <p>Real power consumed and converted to useful work (heat, light, mechanical energy). Measured in <strong>Megawatts (MW)</strong>.</p>
+        <span class="info-formula">P = V &times; I &times; cos(&#966;)</span>
+      </div>
+
+      <!-- Q -->
+      <div class="info-tile">
+        <div class="info-tile-header">
+          <div class="info-dot dot-q"></div>
+          <h3>Reactive Power (Q)</h3>
+        </div>
+        <p>Power stored and released by inductors/capacitors. Essential to sustain electromagnetic fields. Measured in <strong>Megavolt-Ampere Reactive (MVAR)</strong>.</p>
+        <span class="info-formula">Q = P &times; tan(&#966;)</span>
+      </div>
+
+      <!-- PF -->
+      <div class="info-tile">
+        <div class="info-tile-header">
+          <div class="info-dot dot-pf"></div>
+          <h3>Power Factor (PF)</h3>
+        </div>
+        <p>Ratio of active to apparent power. Ranges 0 to 1. PF = 1.0 means purely resistive (no reactive power). Measured in <strong>Megavolt-Ampere (MVA)</strong> for apparent power.</p>
+        <span class="info-formula">PF = P / S = cos(&#966;)</span>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round"
+           xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        <line x1="12" y1="9"  x2="12"    y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <p>
+        <strong>Input Guidelines:</strong>
+        Power Factor must be between 0 and 1 (inclusive). A PF of 1.0 yields Q = 0 MVAR (purely resistive load).
+        <strong>Lagging PF</strong> (inductive: motors, transformers) — Q is positive, system absorbs reactive power.
+        <strong>Leading PF</strong> (capacitive: capacitor banks, long cables) — Q is negative, system generates reactive power.
+        Active Power input unit is <strong>MW</strong>; result Q in <strong>MVAR</strong>; apparent power S in <strong>MVA</strong>.
+      </p>
+    </div>
+  </div>
+
+  <div class="footer">
+    Reactive Power Calculator &nbsp;·&nbsp; IEEE / IEC Power Engineering Reference &nbsp;·&nbsp; v2.0 (MW / MVAR / MVA)
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ============================================================
+   State
+============================================================ */
+let pfMode = 'lag';   // 'lag' or 'lead'
+let isDark = false;
+
+/* ============================================================
+   Theme Toggle
+============================================================ */
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : '');
+  document.getElementById('theme-btn').textContent = isDark ? '◐ Light' : '◐ Dark';
+}
+
+/* ============================================================
+   PF Mode Toggle (Lagging / Leading)
+============================================================ */
+function setPFMode(mode) {
+  pfMode = mode;
+  document.getElementById('btn-lag').classList.toggle('active',  mode === 'lag');
+  document.getElementById('btn-lead').classList.toggle('active', mode === 'lead');
+  // Recalculate if result is already shown
+  if (document.getElementById('result-card').classList.contains('visible')) {
+    calculate();
+  }
+}
+
+/* ============================================================
+   Validation Helpers
+============================================================ */
+function setError(field, msg) {
+  document.getElementById('input-' + field).classList.add('error');
+  document.getElementById('err-'   + field).textContent = msg;
+}
+function clearError(field) {
+  document.getElementById('input-' + field).classList.remove('error');
+  document.getElementById('err-'   + field).textContent = '';
+}
+function clearAllErrors() { clearError('p'); clearError('pf'); }
+
+/* ============================================================
+   Main Calculation
+   Units: P in MW → Q in MVAR, S in MVA
+   Formula:
+     φ (rad) = arccos(PF)
+     Q (MVAR) = P (MW) × tan(φ)
+     S (MVA)  = P (MW) / PF
+============================================================ */
+function calculate() {
+  clearAllErrors();
+  const pRaw  = document.getElementById('input-p').value.trim();
+  const pfRaw = document.getElementById('input-pf').value.trim();
+  let valid = true;
+
+  /* --- Validate Active Power --- */
+  if (pRaw === '') {
+    setError('p', 'Active Power (P) is required');
+    valid = false;
+  } else {
+    const v = parseFloat(pRaw);
+    if (isNaN(v))  { setError('p', 'Must be a numeric value'); valid = false; }
+    else if (v < 0){ setError('p', 'P must be ≥ 0 MW');       valid = false; }
+  }
+
+  /* --- Validate Power Factor --- */
+  if (pfRaw === '') {
+    setError('pf', 'Power Factor is required');
+    valid = false;
+  } else {
+    const v = parseFloat(pfRaw);
+    if (isNaN(v))          { setError('pf', 'Must be a numeric value');    valid = false; }
+    else if (v < 0 || v > 1){ setError('pf', 'PF must be between 0 and 1'); valid = false; }
+  }
+
+  if (!valid) return;
+
+  const P  = parseFloat(pRaw);
+  const PF = parseFloat(pfRaw);
+
+  /* --- Core Calculation --- */
+  const phi_rad = Math.acos(PF);                     // angle in radians
+  const phi_deg = phi_rad * (180 / Math.PI);         // angle in degrees
+  const tanPhi  = Math.tan(phi_rad);                 // tan(φ)
+
+  let Q = P * tanPhi;                                // Reactive Power in MVAR
+  if (pfMode === 'lead') Q = -Q;                     // Leading → negative Q
+
+  const S      = PF > 0 ? P / PF : 0;               // Apparent Power in MVA
+  const sinPhi = Math.sin(phi_rad);                  // sin(φ) = Q/S ratio
+
+  /* --- Update Result Display --- */
+  document.getElementById('res-p').innerHTML =
+    P.toFixed(2) + '<span class="unit">MW</span>';
+  document.getElementById('res-pf').textContent  = PF.toFixed(4);
+  document.getElementById('res-phi').innerHTML =
+    phi_deg.toFixed(2) + '<span class="unit">°</span>';
+  document.getElementById('res-q').innerHTML =
+    Q.toFixed(2) + '<span class="unit" style="font-size:0.9rem;">MVAR</span>';
+  document.getElementById('res-s').innerHTML =
+    S.toFixed(2) + '<span class="unit">MVA</span>';
+  document.getElementById('res-ratio').innerHTML =
+    sinPhi.toFixed(4) + '<span class="unit">sin &#966;</span>';
+
+  /* --- Formula Bar --- */
+  document.getElementById('formula-pf').textContent     = PF.toFixed(4);
+  document.getElementById('formula-phi').textContent    = phi_deg.toFixed(2) + '°';
+  document.getElementById('formula-p').textContent      = P.toFixed(2);
+  document.getElementById('formula-tanphi').textContent = tanPhi.toFixed(4);
+  document.getElementById('formula-result').textContent = Q.toFixed(2);
+
+  /* --- PF Type Badge --- */
+  const badge = document.getElementById('pf-badge');
+  badge.textContent = pfMode === 'lag' ? 'LAGGING' : 'LEADING';
+  badge.className   = 'pf-badge ' + pfMode;
+
+  /* --- Show Result Card --- */
+  document.getElementById('result-card').classList.add('visible');
+
+  /* --- Redraw Triangle --- */
+  drawDiagram(P, Q, S, phi_deg, pfMode);
+}
+
+/* ============================================================
+   Power Triangle SVG (P–Q–S Diagram)
+   Drawn dynamically; labels show MW / MVAR / MVA
+============================================================ */
+function drawDiagram(P, Q, S, phi_deg, mode) {
+  const svg  = document.getElementById('power-diagram');
+  const W = 420, H = 200;
+  const pad  = { left: 42, top: 22, right: 106, bottom: 32 };
+  const drawW = W - pad.left - pad.right;
+  const drawH = H - pad.top  - pad.bottom;
+
+  const absQ      = Math.abs(Q);
+  const isLeading = mode === 'lead';
+
+  // Scale both axes proportionally to fit the drawing area
+  const scaleX = S  > 0 ? drawW / S  : 1;
+  const scaleY = absQ > 0 ? drawH / absQ : 1;
+  const scale  = Math.min(scaleX, scaleY) * 0.82;
+
+  const Px = P    * scale;
+  const Qy = absQ * scale;
+
+  // Origin: left side, vertically placed so triangle fits
+  const ox = pad.left;
+  const oy = isLeading
+    ? pad.top + 10
+    : pad.top + Qy + 10;
+
+  const mId  = 'arr' + Date.now();
+  const colP = '#F59E0B';   // amber — Active Power
+  const colQ = isLeading ? '#10B981' : '#2A7FE8';  // green or blue
+  const colS = '#94A3B8';   // gray — Apparent Power
+
+  svg.innerHTML = `
+    <defs>
+      <marker id="${mId}-p" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+        <polygon points="0 0,7 3.5,0 7" fill="${colP}"/>
+      </marker>
+      <marker id="${mId}-q" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+        <polygon points="0 0,7 3.5,0 7" fill="${colQ}"/>
+      </marker>
+      <marker id="${mId}-s" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+        <polygon points="0 0,7 3.5,0 7" fill="${colS}"/>
+      </marker>
+    </defs>
+
+    <!-- Right-angle box at corner (Px, oy) -->
+    <rect x="${ox + Px - 10}" y="${oy + (isLeading ? 0 : -10)}"
+          width="10" height="10"
+          fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+
+    <!-- P vector — horizontal -->
+    <line x1="${ox}" y1="${oy}"
+          x2="${ox + Px - 6}" y2="${oy}"
+          stroke="${colP}" stroke-width="2.2"
+          marker-end="url(#${mId}-p)"/>
+    <text x="${ox + Px / 2}"
+          y="${oy + (isLeading ? -9 : 14)}"
+          fill="${colP}"
+          font-family="Consolas,Menlo,'Courier New',monospace"
+          font-size="11" font-weight="600" text-anchor="middle">
+      P = ${P.toFixed(2)} MW
+    </text>
+
+    <!-- Q vector — vertical -->
+    <line x1="${ox + Px}" y1="${oy}"
+          x2="${ox + Px}" y2="${oy + (isLeading ? Qy - 6 : -Qy + 6)}"
+          stroke="${colQ}" stroke-width="2.2"
+          marker-end="url(#${mId}-q)"/>
+    <text x="${ox + Px + 13}"
+          y="${oy + (isLeading ? Qy / 2 : -Qy / 2)}"
+          fill="${colQ}"
+          font-family="Consolas,Menlo,'Courier New',monospace"
+          font-size="11" font-weight="600" dominant-baseline="middle">
+      Q = ${Q.toFixed(2)} MVAR
+    </text>
+
+    <!-- S vector — hypotenuse (dashed) -->
+    ${Px > 6 ? `
+    <line x1="${ox}" y1="${oy}"
+          x2="${ox + Px - 5}" y2="${oy + (isLeading ? Qy - 4 : -Qy + 4)}"
+          stroke="${colS}" stroke-width="1.5" stroke-dasharray="5,3"
+          marker-end="url(#${mId}-s)"/>
+    <text x="${ox + Px / 2 - 18}"
+          y="${oy + (isLeading ? Qy / 2 + 16 : -Qy / 2 - 8)}"
+          fill="${colS}"
+          font-family="Consolas,Menlo,'Courier New',monospace"
+          font-size="11" font-weight="600" text-anchor="middle">
+      S = ${(parseFloat(document.getElementById('res-s').textContent) || 0).toFixed(2)} MVA
+    </text>
+    ` : ''}
+
+    <!-- φ arc -->
+    <path d="M ${ox + 28} ${oy}
+             A 28 28 0 0 ${isLeading ? 1 : 0}
+               ${ox + 28 * Math.cos(phi_deg * Math.PI / 180)}
+               ${oy + (isLeading ? 1 : -1) * 28 * Math.sin(phi_deg * Math.PI / 180)}"
+          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <text x="${ox + 36}"
+          y="${oy + (isLeading ? 18 : -12)}"
+          fill="rgba(255,255,255,0.5)"
+          font-family="Consolas,Menlo,'Courier New',monospace"
+          font-size="10">
+      &#966;=${phi_deg.toFixed(1)}°
+    </text>
+
+    <!-- Origin + tip dots -->
+    <circle cx="${ox}"        cy="${oy}"                               r="3" fill="rgba(255,255,255,0.4)"/>
+    <circle cx="${ox + Px}"   cy="${oy + (isLeading ? Qy : -Qy)}"    r="3" fill="${colQ}" opacity="0.75"/>
+  `;
+}
+
+/* ============================================================
+   Reset Form
+============================================================ */
+function resetForm() {
+  document.getElementById('input-p').value  = '';
+  document.getElementById('input-pf').value = '';
+  clearAllErrors();
+  document.getElementById('result-card').classList.remove('visible');
+}
+
+/* ============================================================
+   Copy Result to Clipboard
+   Output uses MW / MVAR / MVA units
+============================================================ */
+function copyResult() {
+  const P   = document.getElementById('input-p').value;
+  const PF  = document.getElementById('input-pf').value;
+  const Q   = document.getElementById('res-q').textContent.replace('MVAR','').trim();
+  const phi = document.getElementById('res-phi').textContent.replace('°','').trim();
+  const S   = document.getElementById('res-s').textContent.replace('MVA','').trim();
+
+  const text = [
+    '=== Reactive Power Calculation ===',
+    `Active Power   (P) : ${P} MW`,
+    `Power Factor  (PF) : ${PF}`,
+    `PF Type            : ${pfMode.toUpperCase()}`,
+    `Angle \u03C6           : ${phi}°`,
+    `Reactive Power (Q) : ${Q} MVAR`,
+    `Apparent Power (S) : ${S} MVA`,
+    '',
+    'Formula: Q [MVAR] = P [MW] \u00D7 tan(arccos(PF))',
+    '         S [MVA]  = P [MW] / PF',
+  ].join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '&#10003; Copied';
+    setTimeout(() => { btn.innerHTML = orig; }, 1800);
+  }).catch(() => {
+    // Fallback for environments without clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+</script>
+</body>
+</html>

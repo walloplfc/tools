@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scale Converter — Y = Ax + B</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: #d8d4cc;
+    --text: #1a1917;
+    --muted: #6b6860;
+    --accent: #1a5fd4;
+    --accent-soft: #e8eefa;
+    --red: #c8312a;
+    --red-soft: #fdecea;
+    --green: #1a7a4a;
+    --green-soft: #e6f5ed;
+    --orange: #b85c00;
+    --orange-soft: #fff3e6;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans Thai', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    line-height: 1.6;
+  }
+
+  .container { max-width: 680px; margin: 0 auto; }
+
+  /* ── Header ── */
+  header { margin-bottom: 1.75rem; }
+  .eq-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--text);
+    color: var(--bg);
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+  }
+  h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 6px; }
+  .subtitle { font-size: 14px; color: var(--muted); }
+
+  /* ── Tab bar ── */
+  .tab-bar {
+    display: flex; gap: 6px;
+    margin-bottom: 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 9px 10px;
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 500;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: background 0.15s, color 0.15s;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .tab-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin-bottom: 1rem;
+  }
+
+  /* ── Inputs ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .field input {
+    font-family: var(--mono); font-size: 15px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    color: var(--text); outline: none; width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(26,95,212,0.12);
+    background: #fff;
+  }
+  .field input[readonly] { color: var(--muted); cursor: not-allowed; opacity: 0.7; }
+  .field input::placeholder { color: #bbb; }
+
+  /* ── Xmin radio ── */
+  .xmin-selector { display: flex; gap: 8px; }
+  .xmin-option {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 10px 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer;
+    font-family: var(--mono); font-size: 15px; font-weight: 500;
+    color: var(--muted); user-select: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .xmin-option input[type="radio"] { display: none; }
+  .xmin-option.selected { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+  .xmax-fixed {
+    font-family: var(--mono); font-size: 15px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    color: var(--muted); opacity: 0.7;
+    display: flex; align-items: center;
+  }
+  .fixed-badge {
+    font-size: 10px; background: var(--border); color: var(--muted);
+    padding: 1px 6px; border-radius: 3px; margin-left: 8px;
+    font-family: var(--sans); letter-spacing: 0.04em;
+  }
+
+  /* ── Error ── */
+  .error {
+    font-size: 13px; color: var(--red);
+    background: var(--red-soft); border: 1px solid #f5c0bd;
+    border-radius: 8px; padding: 8px 12px;
+    margin-top: 8px; display: none;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%; padding: 13px;
+    font-family: var(--sans); font-size: 15px; font-weight: 600;
+    background: var(--text); color: var(--bg);
+    border: none; border-radius: 10px; cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.99); }
+  .btn.secondary {
+    background: transparent; color: var(--text);
+    border: 1.5px solid var(--border); margin-top: 8px;
+  }
+  .btn.secondary:hover { background: var(--surface2); }
+
+  /* ── Metrics (forward/Tab2) ── */
+  .results { display: none; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+  .metric { background: var(--surface2); border-radius: 10px; padding: 14px; text-align: center; }
+  .metric.min { background: var(--red-soft); border: 1px solid #f5c0bd; }
+  .metric.max { background: var(--green-soft); border: 1px solid #a8dfc0; }
+  .metric.range { background: var(--accent-soft); border: 1px solid #b8ccf0; }
+  .m-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
+  .metric.min .m-label { color: var(--red); }
+  .metric.max .m-label { color: var(--green); }
+  .metric.range .m-label { color: var(--accent); }
+  .m-val { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--text); }
+  .m-sub { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+
+  /* ── Eq display ── */
+  .eq-display {
+    font-family: var(--mono); font-size: 13px; color: var(--muted);
+    margin-bottom: 12px; padding: 8px 12px;
+    background: var(--surface2); border-radius: 6px;
+  }
+  .eq-display strong { color: var(--text); font-weight: 500; }
+
+  /* ── Chart ── */
+  .chart-container { position: relative; width: 100%; height: 280px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+
+  /* ── Inverse result metrics (Tab1) ── */
+  .inv-result { display: none; margin-top: 0; }
+  .inv-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .inv-metric {
+    background: var(--orange-soft); border: 1px solid #f0c896;
+    border-radius: 10px; padding: 14px; text-align: center;
+  }
+  .inv-metric .m-label { color: var(--orange); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .inv-metric .m-val { font-family: var(--mono); font-size: 24px; font-weight: 500; color: var(--text); }
+  .inv-metric .m-sub { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+  .inv-eq-display {
+    font-family: var(--mono); font-size: 13px; color: var(--muted);
+    margin-top: 12px; padding: 10px 14px;
+    background: var(--surface2); border-radius: 6px;
+    border-left: 3px solid var(--orange);
+  }
+  .inv-eq-display strong { color: var(--text); font-weight: 600; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+
+  /* ── Info note ── */
+  .info-note {
+    font-size: 12px; color: var(--muted);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 1rem; line-height: 1.5;
+  }
+  .info-note strong { color: var(--text); }
+
+  /* ── Footer ── */
+  footer { text-align: center; font-size: 12px; color: var(--muted); margin-top: 2rem; }
+
+  @media (max-width: 480px) {
+    .metrics { grid-template-columns: 1fr; }
+    .inv-metrics { grid-template-columns: 1fr 1fr; }
+    .m-val { font-size: 18px; }
+    h1 { font-size: 22px; }
+    .tab-btn { font-size: 11px; padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="eq-badge">Y = Ax + B</div>
+    <h1>Scale Converter</h1>
+    <p class="subtitle">แปลงค่า Scale Min/Max ↔ A, B Value</p>
+  </header>
+
+  <!-- Tab switcher -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('inverse')" id="tab-inverse">
+      Scale Min, Max<br>→ A, B Value
+    </button>
+    <button class="tab-btn" onclick="switchTab('forward')" id="tab-forward">
+      A, B Value<br>→ Scale Min, Max
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB 1: Scale Min,Max → A,B  (Inverse — แท็บแรก)
+  ════════════════════════════════════════════════════════ -->
+  <div id="panel-inverse">
+
+    <div class="info-note">
+      คำนวณหาค่า <strong>A, B</strong> จาก Scale Min และ Scale Max ที่กำหนด<br>
+      สูตร: <strong>A = (Scale Max − Scale Min) / (Xmax − Xmin)</strong> &nbsp;,&nbsp;
+             <strong>B = Scale Min − A · Xmin</strong>
+    </div>
+
+    <div class="card">
+      <div class="card-title">กำหนด Scale Range</div>
+      <div class="grid-2" style="margin-bottom:1.25rem;">
+        <div class="field">
+          <label for="inv-miny">Scale Min</label>
+          <input type="number" id="inv-miny" placeholder="เช่น 0" step="any">
+        </div>
+        <div class="field">
+          <label for="inv-maxy">Scale Max</label>
+          <input type="number" id="inv-maxy" placeholder="เช่น 100" step="any">
+        </div>
+      </div>
+
+      <div class="card-title">ช่วงค่า X (อ้างอิง)</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Xmin</label>
+          <div class="xmin-selector">
+            <label class="xmin-option selected" id="xmin-opt-n1-inv">
+              <input type="radio" name="xmin-inv" value="-1" checked onchange="updateXminStyle()"> −1
+            </label>
+            <label class="xmin-option" id="xmin-opt-0-inv">
+              <input type="radio" name="xmin-inv" value="0" onchange="updateXminStyle()"> 0
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Xmax</label>
+          <div class="xmax-fixed">1 <span class="fixed-badge">คงที่</span></div>
+        </div>
+      </div>
+
+      <div class="error" id="err-inv"></div>
+      <div class="divider"></div>
+      <button class="btn" onclick="inverseCalculate()">คำนวณ A, B</button>
+    </div>
+
+    <!-- Inverse result -->
+    <div class="inv-result card" id="results-inv">
+      <div class="card-title">A, B Value ที่ได้</div>
+      <div class="inv-metrics">
+        <div class="inv-metric">
+          <div class="m-label">A — Gain / Slope</div>
+          <div class="m-val" id="inv-res-a">—</div>
+          <div class="m-sub" id="inv-res-a-sub">—</div>
+        </div>
+        <div class="inv-metric">
+          <div class="m-label">B — Offset / Bias</div>
+          <div class="m-val" id="inv-res-b">—</div>
+          <div class="m-sub" id="inv-res-b-sub">—</div>
+        </div>
+      </div>
+      <div class="inv-eq-display" id="inv-eq-display"></div>
+      <div style="margin-top:10px;">
+        <button class="btn secondary" onclick="applyInverseToForward()">
+          → นำ A, B ไปตรวจสอบในแท็บถัดไป
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB 2: A,B Value → Scale Min,Max  (Forward)
+  ════════════════════════════════════════════════════════ -->
+  <div id="panel-forward" style="display:none;">
+    <div class="card">
+      <div class="card-title">A, B Value</div>
+      <div class="grid-2" style="margin-bottom:1.25rem;">
+        <div class="field">
+          <label for="inp-a">A — Gain / Slope</label>
+          <input type="number" id="inp-a" placeholder="เช่น 50" step="any">
+        </div>
+        <div class="field">
+          <label for="inp-b">B — Offset / Bias</label>
+          <input type="number" id="inp-b" placeholder="เช่น 50" step="any">
+        </div>
+      </div>
+
+      <div class="card-title">ช่วงค่า X</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Xmin</label>
+          <div class="xmin-selector">
+            <label class="xmin-option selected" id="xmin-opt-n1-fwd">
+              <input type="radio" name="xmin-fwd" value="-1" checked onchange="updateXminStyleFwd()"> −1
+            </label>
+            <label class="xmin-option" id="xmin-opt-0-fwd">
+              <input type="radio" name="xmin-fwd" value="0" onchange="updateXminStyleFwd()"> 0
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Xmax</label>
+          <div class="xmax-fixed">1 <span class="fixed-badge">คงที่</span></div>
+        </div>
+      </div>
+
+      <div class="error" id="err-fwd"></div>
+      <div class="divider"></div>
+      <button class="btn" onclick="calculate()">คำนวณ Scale Min, Max</button>
+    </div>
+
+    <!-- Forward result -->
+    <div class="results card" id="results-fwd">
+      <div class="card-title">Scale Min, Max ที่ได้</div>
+      <div class="metrics">
+        <div class="metric min">
+          <div class="m-label">Scale Min</div>
+          <div class="m-val" id="res-miny">—</div>
+          <div class="m-sub" id="res-miny-x">ที่ x = —</div>
+        </div>
+        <div class="metric max">
+          <div class="m-label">Scale Max</div>
+          <div class="m-val" id="res-maxy">—</div>
+          <div class="m-sub" id="res-maxy-x">ที่ x = —</div>
+        </div>
+        <div class="metric range">
+          <div class="m-label">ช่วง Scale</div>
+          <div class="m-val" id="res-range">—</div>
+          <div class="m-sub">Max − Min</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="eq-display" id="eq-display"></div>
+      <div class="chart-container">
+        <canvas id="lineChart" role="img" aria-label="กราฟ Y = Ax + B"></canvas>
+      </div>
+      <div class="legend">
+        <span class="legend-item">
+          <span style="display:inline-block;background:#1a5fd4;border-radius:2px;width:16px;height:3px;"></span>
+          Y = Ax + B
+        </span>
+        <span class="legend-item">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c8312a;"></span>
+          Scale Min
+        </span>
+        <span class="legend-item">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1a7a4a;"></span>
+          Scale Max
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <footer>Scale Converter &nbsp;·&nbsp; Y = Ax + B &nbsp;·&nbsp; เปิดใช้งาน offline ได้ทันที</footer>
+
+</div>
+
+<script>
+  let chartInstance = null;
+
+  // ── Helpers ─────────────────────────────────────────────
+  function fmt(n) {
+    if (Number.isInteger(n)) return n.toString();
+    return parseFloat(n.toFixed(6)).toString();
+  }
+
+  function getXminInv() {
+    return parseFloat(document.querySelector('input[name="xmin-inv"]:checked').value);
+  }
+  function getXminFwd() {
+    return parseFloat(document.querySelector('input[name="xmin-fwd"]:checked').value);
+  }
+
+  function updateXminStyle() {
+    const val = getXminInv();
+    document.getElementById('xmin-opt-n1-inv').classList.toggle('selected', val === -1);
+    document.getElementById('xmin-opt-0-inv').classList.toggle('selected', val === 0);
+  }
+  function updateXminStyleFwd() {
+    const val = getXminFwd();
+    document.getElementById('xmin-opt-n1-fwd').classList.toggle('selected', val === -1);
+    document.getElementById('xmin-opt-0-fwd').classList.toggle('selected', val === 0);
+  }
+
+  // ── Tab switching ───────────────────────────────────────
+  function switchTab(tab) {
+    document.getElementById('panel-forward').style.display  = tab === 'forward'  ? '' : 'none';
+    document.getElementById('panel-inverse').style.display  = tab === 'inverse'  ? '' : 'none';
+    document.getElementById('tab-forward').classList.toggle('active', tab === 'forward');
+    document.getElementById('tab-inverse').classList.toggle('active', tab === 'inverse');
+  }
+
+  // ── TAB 1: Inverse — Scale Min,Max → A,B ───────────────
+  function inverseCalculate() {
+    const errEl = document.getElementById('err-inv');
+    errEl.style.display = 'none';
+
+    const scaleMin = parseFloat(document.getElementById('inv-miny').value);
+    const scaleMax = parseFloat(document.getElementById('inv-maxy').value);
+    const xmin = getXminInv();
+    const xmax = 1;
+
+    if (isNaN(scaleMin) || isNaN(scaleMax)) {
+      errEl.textContent = '⚠ กรุณากรอก Scale Min และ Scale Max ให้ครบถ้วน';
+      errEl.style.display = 'block'; return;
+    }
+    if (scaleMin > scaleMax) {
+      errEl.textContent = '⚠ Scale Min ต้องน้อยกว่าหรือเท่ากับ Scale Max';
+      errEl.style.display = 'block'; return;
+    }
+
+    const dX = xmax - xmin; // 1-(-1)=2 หรือ 1-0=1
+
+    // Case A>0: scaleMin ที่ xmin, scaleMax ที่ xmax
+    const A = (scaleMax - scaleMin) / dX;
+    const B = scaleMin - A * xmin;
+
+    // Alternative A<0: scaleMax ที่ xmin, scaleMin ที่ xmax
+    const A2 = (scaleMin - scaleMax) / dX;
+    const B2 = scaleMax - A2 * xmin;
+
+    document.getElementById('inv-res-a').textContent = fmt(A);
+    document.getElementById('inv-res-a-sub').textContent = 'Gain / Slope';
+    document.getElementById('inv-res-b').textContent = fmt(B);
+    document.getElementById('inv-res-b-sub').textContent = 'Offset / Bias';
+
+    const Astr = A === 1 ? '' : A === -1 ? '-' : fmt(A);
+    const Babs = Math.abs(B);
+    const Bstr = B === 0 ? '' : B > 0 ? ' + ' + fmt(B) : ' − ' + fmt(Babs);
+
+    let html = '<strong>Y = ' + Astr + 'x' + Bstr + '</strong>' +
+      ' &nbsp;→&nbsp; Scale [' + fmt(scaleMin) + ', ' + fmt(scaleMax) + ']' +
+      '  |  X ∈ [' + fmt(xmin) + ', ' + xmax + ']';
+    if (scaleMin !== scaleMax) {
+      html += '<br><small style="color:var(--muted);">ทางเลือก A < 0 : A = ' + fmt(A2) + ' , B = ' + fmt(B2) + '</small>';
+    }
+    document.getElementById('inv-eq-display').innerHTML = html;
+
+    document.getElementById('results-inv').style.display = 'block';
+    document.getElementById('results-inv').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Store A,B for transfer button
+    document.getElementById('results-inv').dataset.a = A;
+    document.getElementById('results-inv').dataset.b = B;
+    document.getElementById('results-inv').dataset.xmin = xmin;
+  }
+
+  // ── Transfer A,B to Tab 2 and compute ──────────────────
+  function applyInverseToForward() {
+    const el = document.getElementById('results-inv');
+    if (!el.dataset.a) return;
+
+    const A = el.dataset.a;
+    const B = el.dataset.b;
+    const xmin = parseFloat(el.dataset.xmin);
+
+    document.getElementById('inp-a').value = A;
+    document.getElementById('inp-b').value = B;
+
+    // Sync xmin radio in fwd tab
+    document.querySelectorAll('input[name="xmin-fwd"]').forEach(r => {
+      r.checked = parseFloat(r.value) === xmin;
+    });
+    updateXminStyleFwd();
+
+    switchTab('forward');
+    calculate();
+
+    // Flash highlight
+    ['inp-a','inp-b'].forEach(id => {
+      const inp = document.getElementById(id);
+      inp.style.borderColor = 'var(--orange)';
+      inp.style.boxShadow = '0 0 0 3px rgba(184,92,0,0.15)';
+      setTimeout(() => { inp.style.borderColor = ''; inp.style.boxShadow = ''; }, 1800);
+    });
+  }
+
+  // ── TAB 2: Forward — A,B → Scale Min,Max ───────────────
+  function calculate() {
+    const errEl = document.getElementById('err-fwd');
+    errEl.style.display = 'none';
+
+    const A = parseFloat(document.getElementById('inp-a').value);
+    const B = parseFloat(document.getElementById('inp-b').value);
+    const xmin = getXminFwd();
+    const xmax = 1;
+
+    if (isNaN(A) || isNaN(B)) {
+      errEl.textContent = '⚠ กรุณากรอกค่า A และ B ให้ครบถ้วน';
+      errEl.style.display = 'block'; return;
+    }
+
+    // Generate 200 steps
+    const steps = 200;
+    const stepSize = (xmax - xmin) / steps;
+    const labels = [], data = [];
+    for (let i = 0; i <= steps; i++) {
+      const x = xmin + i * stepSize;
+      labels.push(parseFloat(x.toFixed(6)));
+      data.push(parseFloat((A * x + B).toFixed(6)));
+    }
+
+    // Linear: extremes at endpoints
+    const yAtXmin = A * xmin + B;
+    const yAtXmax = A * xmax + B;
+    const minY = Math.min(yAtXmin, yAtXmax);
+    const maxY = Math.max(yAtXmin, yAtXmax);
+    const xOfMin = minY === yAtXmin ? xmin : xmax;
+    const xOfMax = maxY === yAtXmax ? xmax : xmin;
+
+    document.getElementById('res-miny').textContent = fmt(minY);
+    document.getElementById('res-miny-x').textContent = 'ที่ x = ' + fmt(xOfMin);
+    document.getElementById('res-maxy').textContent = fmt(maxY);
+    document.getElementById('res-maxy-x').textContent = 'ที่ x = ' + fmt(xOfMax);
+    document.getElementById('res-range').textContent = fmt(maxY - minY);
+
+    const Astr = A === 1 ? '' : A === -1 ? '-' : fmt(A);
+    const Babs = Math.abs(B);
+    const Bstr = B === 0 ? '' : B > 0 ? ' + ' + fmt(B) : ' − ' + fmt(Babs);
+    document.getElementById('eq-display').innerHTML =
+      '<strong>Y = ' + Astr + 'x' + Bstr + '</strong>' +
+      ' &nbsp;|&nbsp; X ∈ [' + fmt(xmin) + ', ' + xmax + ']' +
+      '  |  Scale [' + fmt(minY) + ', ' + fmt(maxY) + ']';
+
+    document.getElementById('results-fwd').style.display = 'block';
+    document.getElementById('results-fwd').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    drawChart(labels, data, xOfMin, xOfMax);
+  }
+
+  // ── Draw chart ──────────────────────────────────────────
+  function drawChart(labels, data, xOfMin, xOfMax) {
+    if (chartInstance) { chartInstance.destroy(); }
+    const minIdx = labels.findIndex(x => Math.abs(x - xOfMin) < 1e-9);
+    const maxIdx = labels.findIndex(x => Math.abs(x - xOfMax) < 1e-9);
+    const ctx = document.getElementById('lineChart').getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Y = Ax + B', data,
+            borderColor: '#1a5fd4', borderWidth: 2,
+            pointRadius: 0, tension: 0, fill: false
+          },
+          {
+            label: 'Scale Min',
+            data: labels.map((_, i) => i === minIdx ? data[minIdx] : null),
+            borderColor: '#c8312a', backgroundColor: '#c8312a',
+            pointRadius: labels.map((_, i) => i === minIdx ? 8 : 0),
+            showLine: false
+          },
+          {
+            label: 'Scale Max',
+            data: labels.map((_, i) => i === maxIdx ? data[maxIdx] : null),
+            borderColor: '#1a7a4a', backgroundColor: '#1a7a4a',
+            pointRadius: labels.map((_, i) => i === maxIdx ? 8 : 0),
+            showLine: false
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: items => 'x = ' + parseFloat(items[0].label).toFixed(4),
+              label: item => 'Y = ' + parseFloat(item.raw).toFixed(4)
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            ticks: { color: '#6b6860', maxTicksLimit: 9, callback: v => parseFloat(v.toFixed(2)) },
+            grid: { color: 'rgba(0,0,0,0.06)' }, border: { color: 'rgba(0,0,0,0.1)' }
+          },
+          y: {
+            ticks: { color: '#6b6860', callback: v => parseFloat(v.toFixed(2)) },
+            grid: { color: 'rgba(0,0,0,0.06)' }, border: { color: 'rgba(0,0,0,0.1)' }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Keyboard shortcut ───────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (document.getElementById('tab-inverse').classList.contains('active')) {
+      inverseCalculate();
+    } else {
+      calculate();
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineering Calculation Tools</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg: #f4f7f9;
+      --card-bg: #ffffff;
+      --primary: #1a5fd4;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --font: 'IBM Plex Sans Thai', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .tool-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .tool-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      border-color: #cbd5e1;
+    }
+
+    .tool-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .bg-teal { background: #e0f2fe; color: #0284c7; }
+    .bg-blue { background: #dbeafe; color: #1d4ed8; }
+    .bg-amber { background: #fef3c7; color: #d97706; }
+
+    .tool-card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .tool-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      flex-grow: 1;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 4rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Engineering & SCADA Tools</h1>
+      <p class="subtitle">ชุดเครื่องมือคำนวณสำหรับระบบควบคุมและวิศวกรรมไฟฟ้า</p>
+    </header>
+
+    <div class="tools-grid">
+      <a href="freq-response.html" class="tool-card">
+        <div class="tool-icon bg-teal">⚡</div>
+        <h2>Frequency Response</h2>
+        <p>คำนวณ Governor Droop Control, ΔP และการตอบสนองความถี่ระบบไฟฟ้า (Under/Over Frequency)</p>
+      </a>
+
+      <a href="scale-converter.html" class="tool-card">
+        <div class="tool-icon bg-blue">📈</div>
+        <h2>Scale Converter (Linear)</h2>
+        <p>แปลงค่า Scale Min/Max ให้เป็นสมการเชิงเส้น Y = Ax + B สำหรับปรับตั้งค่าการรับส่งข้อมูล</p>
+      </a>
+
+      <a href="reactive-power.html" class="tool-card">
+        <div class="tool-icon bg-amber">⚙️</div>
+        <h2>Reactive Power (MVAR)</h2>
+        <p>คำนวณค่า Reactive Power (Q) จาก Active Power (P) และ Power Factor (Lagging/Leading)</p>
+      </a>
+    </div>
+
+    <footer>
+      &copy; 2026 Engineering Calculation Suite
+    </footer>
+  </div>
+
+</body>
+</html>
