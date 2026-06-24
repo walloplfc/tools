@@ -384,7 +384,7 @@
 
   /* Annotation zones */
   .zone-bar {
-    display: flex; gap: 8px; margin-top: 8px;
+    display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;
   }
   .zone {
     flex: 0 0 auto;
@@ -398,6 +398,7 @@
   .zone.event { background: rgba(239,68,68,.1); color: var(--red); border: 1px solid rgba(239,68,68,.2); }
   .zone.resp  { background: rgba(34,197,94,.1); color: var(--green); border: 1px solid rgba(34,197,94,.2); }
   .zone.sust  { background: rgba(59,130,246,.1); color: var(--blue); border: 1px solid rgba(59,130,246,.2); }
+  .zone.recv  { background: rgba(168,85,247,.1); color: #a855f7; border: 1px solid rgba(168,85,247,.2); }
 
   /* Responsive */
   @media (max-width: 960px) {
@@ -431,7 +432,7 @@
     <h1>Frequency Response Calculator</h1>
     <p>NCC / BNCC · Governor Droop Control · IEC 60870-5-104</p>
   </div>
-  <div class="header-badge">⚡ Power System Tool v2.0</div>
+  <div class="header-badge">⚡ Power System Tool v2.1</div>
 </header>
 
 <div class="main-grid">
@@ -540,14 +541,14 @@
         <div class="kpi-label">สถานะการตอบสนอง</div>
         <div class="kpi-value" id="k-dir" style="font-size:16px;padding-top:4px;">—</div>
         <div class="kpi-unit" id="k-dir-sub">Under / Over Frequency</div>
-        <div class="kpi-sub" id="k-time">Start ≤ 20s | Sustain ≥ 60s</div>
+        <div class="kpi-sub" id="k-time">Start ≤ 20s | Sustained 160s</div>
       </div>
     </div>
 
     <div class="chart-panel">
       <div class="chart-header">
         <div class="chart-title">
-          📈 กราฟการตอบสนองความถี่ตามเวลา (0–120 วินาที)
+          📈 กราฟการตอบสนองความถี่ตามเวลา (0–200 วินาที)
         </div>
         <div class="chart-legend">
           <div class="legend-item"><div class="legend-dot" style="background:#00d4c8"></div>กำลังไฟฟ้า (MW)</div>
@@ -558,7 +559,8 @@
         <span class="zone pre">Pre-event (0–20s)</span>
         <span class="zone event">Event (t=20s)</span>
         <span class="zone resp">Start Response (≤40s)</span>
-        <span class="zone sust">Sustained Response (40–120s)</span>
+        <span class="zone sust">Sustained Response (40–160s)</span>
+        <span class="zone recv">Recovery (&gt;160s)</span>
       </div>
       <div class="chart-wrap" style="margin-top:12px;">
         <canvas id="responseChart"></canvas>
@@ -614,7 +616,6 @@ function calculate() {
   const deltaF = fTest - fNom;
   const absDeltaF = Math.abs(deltaF);
   
-  // ตรวจสอบเงื่อนไข Deadband: ถ้าค่าเบี่ยงเบนความถี่น้อยกว่า Deadband จะไม่ตอบสนอง
   const deltaFeff = Math.max(0, absDeltaF - deadband);
   const deltaP = deltaFeff > 0 ? (deltaFeff / (fNom * droop)) * pTest : 0;
   
@@ -644,7 +645,6 @@ function calculate() {
   setKPI('k-dp', (deltaFeff > 0 ? (isUnder ? '+' : '−') : '') + deltaP.toFixed(2), color);
   setKPI('k-pt', pTotal.toFixed(2), 'var(--teal)');
   
-  // อัปเดตสถานะกรณีที่ไม่ตอบสนอง (ค่าตกอยู่ใน Deadband)
   if (deltaFeff === 0) {
     document.getElementById('k-dir').textContent = '— ไม่ตอบสนอง';
     document.getElementById('k-dir').style.color = 'var(--text-3)';
@@ -657,32 +657,40 @@ function calculate() {
       : `ต้อง${direction}กำลังไฟฟ้า −${deltaP.toFixed(2)} MW`;
   }
 
-  // Build chart data (0–120s)
+  // Build chart data (0–200 วินาที)
   const labels = [], powerData = [], freqData = [];
-  for (let t = 0; t <= 120; t++) {
+  for (let t = 0; t <= 200; t++) {
     labels.push(t);
     let p, f;
     if (t < 20) {
-      // Pre-event: steady at pTest, fNom
+      // Pre-event
       p = pTest;
       f = fNom;
     } else if (t < 22) {
-      // Event instant: frequency drops/rises sharply
+      // Event instant
       const ratio = (t - 20) / 2;
       f = fNom + deltaF * ratio;
       p = pTest;
     } else if (t < 40) {
-      // Response ramp: linear over ~18s
+      // Response ramp
       const ratio = Math.min((t - 22) / 16, 1);
-      const eased = ratio < 0.5 ? 2*ratio*ratio : -1+(4-2*ratio)*ratio; // ease in-out
+      const eased = ratio < 0.5 ? 2*ratio*ratio : -1+(4-2*ratio)*ratio;
       p = pTest + (isUnder ? 1 : -1) * deltaP * eased;
-      // ให้ความถี่ค้างอยู่ที่ความถี่ที่กรอกไปตลอด
+      f = fTest; 
+    } else if (t <= 160) {
+      // Sustained Response (40–160s) ค้างค่าตามที่กรอก
+      p = pTotal;
       f = fTest; 
     } else {
-      // Sustained: hold at pTotal, freq stabilised
-      p = pTotal;
-      // ให้ความถี่ค้างอยู่ที่ความถี่ที่กรอกไปตลอด
-      f = fTest; 
+      // After 160s: Recovery phase กลับไปที่ค่าเริ่มต้น (ทำ Ramp สั้นๆ 2 วินาทีเพื่อให้กราฟสวยงาม)
+      if (t <= 162) {
+        const ratio = (t - 160) / 2;
+        p = pTotal + (pTest - pTotal) * ratio;
+        f = fTest + (fNom - fTest) * ratio;
+      } else {
+        p = pTest;
+        f = fNom;
+      }
     }
     powerData.push(+p.toFixed(3));
     freqData.push(+f.toFixed(3));
@@ -692,7 +700,6 @@ function calculate() {
   if (chartInstance) chartInstance.destroy();
   const ctx = document.getElementById('responseChart').getContext('2d');
 
-  // gradient for power
   const gradP = ctx.createLinearGradient(0, 0, 0, 220);
   gradP.addColorStop(0, 'rgba(0,212,200,.25)');
   gradP.addColorStop(1, 'rgba(0,212,200,0)');
@@ -751,15 +758,14 @@ function calculate() {
               return ` 〜 f = ${item.parsed.y.toFixed(3)} Hz`;
             }
           }
-        },
-        annotation: {}
+        }
       },
       scales: {
         x: {
           title: { display: true, text: 'เวลา (วินาที)', color: '#475569', font: { size: 10 } },
           ticks: {
             color: '#475569', font: { size: 10, family: 'IBM Plex Mono' },
-            callback: v => v % 10 === 0 ? v + 's' : ''
+            callback: v => v % 20 === 0 ? v + 's' : ''
           },
           grid: { color: '#1a2035' }
         },
@@ -779,13 +785,11 @@ function calculate() {
     }
   });
 
-  // Tables — build all 4 test scenarios
   buildAllTables(pTest, fNom, droop, useDB, deadband, pContract);
 }
 
 function buildAllTables(pTest, fNom, droop, useDB, deadband, pContract) {
-  // Under freq: 4 cases based on current fNom
-  const step = fNom * 0.006; // ~0.3Hz for 50Hz
+  const step = fNom * 0.006;
   const underCases = [
     { label: 'กรณีที่ 1', df: -(step), name: `−${step.toFixed(2)} Hz` },
     { label: 'กรณีที่ 2', df: -(step * 1.667), name: `−${(step*1.667).toFixed(2)} Hz` },
@@ -798,7 +802,6 @@ function buildAllTables(pTest, fNom, droop, useDB, deadband, pContract) {
   function makeRow(df, pTest, fNom, droop, useDB, deadband, dir) {
     const absDf = Math.abs(df);
     const dfEff = Math.max(0, absDf - (useDB ? deadband : 0));
-    // ตรวจสอบเพื่อไม่ให้แสดงค่าตอบสนอง หากอยู่ในช่วง Deadband
     const dp = dfEff > 0 ? (dfEff / (fNom * droop)) * pTest : 0;
     const fSys = fNom + df;
     const pTotal = dir === 'under' ? pTest + dp : pTest - dp;
@@ -833,9 +836,7 @@ function buildAllTables(pTest, fNom, droop, useDB, deadband, pContract) {
   document.getElementById('overTable').innerHTML = oHtml;
 }
 
-// Auto-calculate on load
 window.addEventListener('load', () => {
-  // pick first chip
   document.querySelector('.chip').classList.add('active');
   calculate();
 });
