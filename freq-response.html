@@ -435,7 +435,6 @@
 </header>
 
 <div class="main-grid">
-  <!-- ── LEFT: Input Panel ── -->
   <div>
     <div class="panel">
       <div class="panel-title"><span class="dot"></span>พารามิเตอร์ระบบ</div>
@@ -516,10 +515,8 @@
     </div>
   </div>
 
-  <!-- ── RIGHT: Results ── -->
   <div class="right-col">
 
-    <!-- KPIs -->
     <div class="kpi-row" id="kpiRow">
       <div class="kpi-card" style="--accent:var(--text-3)">
         <div class="kpi-label">Δf effective</div>
@@ -547,7 +544,6 @@
       </div>
     </div>
 
-    <!-- Chart -->
     <div class="chart-panel">
       <div class="chart-header">
         <div class="chart-title">
@@ -569,7 +565,6 @@
       </div>
     </div>
 
-    <!-- Tables -->
     <div class="results-grid" id="resultsGrid">
       <div class="result-table-wrap">
         <div class="result-table-title under">↓ UNDER FREQUENCY — เพิ่มกำลังไฟฟ้า</div>
@@ -618,13 +613,15 @@ function calculate() {
 
   const deltaF = fTest - fNom;
   const absDeltaF = Math.abs(deltaF);
+  
+  // ตรวจสอบเงื่อนไข Deadband: ถ้าค่าเบี่ยงเบนความถี่น้อยกว่า Deadband จะไม่ตอบสนอง
   const deltaFeff = Math.max(0, absDeltaF - deadband);
-  const deltaP = (deltaFeff / (fNom * droop)) * pTest;
+  const deltaP = deltaFeff > 0 ? (deltaFeff / (fNom * droop)) * pTest : 0;
+  
   const isUnder = deltaF < 0;
   const pTotal = isUnder ? pTest + deltaP : pTest - deltaP;
   const direction = isUnder ? 'เพิ่ม' : 'ลด';
-  const color = isUnder ? 'var(--green)' : 'var(--red)';
-  const accent = isUnder ? 'var(--blue)' : 'var(--amber)';
+  const color = deltaFeff > 0 ? (isUnder ? 'var(--green)' : 'var(--red)') : 'var(--text-3)';
 
   // Formula box
   const formulaBox = document.getElementById('formulaBox');
@@ -642,14 +639,23 @@ function calculate() {
     if (col) el.style.color = col;
     el.closest('.kpi-card').style.setProperty('--accent', col || 'var(--teal)');
   };
+  
   setKPI('k-df', deltaFeff.toFixed(3) + (useDB ? '*' : ''), 'var(--teal)');
-  setKPI('k-dp', (isUnder ? '+' : '−') + deltaP.toFixed(2), color);
+  setKPI('k-dp', (deltaFeff > 0 ? (isUnder ? '+' : '−') : '') + deltaP.toFixed(2), color);
   setKPI('k-pt', pTotal.toFixed(2), 'var(--teal)');
-  document.getElementById('k-dir').textContent = isUnder ? '▼ Under' : '▲ Over';
-  document.getElementById('k-dir').style.color = isUnder ? 'var(--blue)' : 'var(--amber)';
-  document.getElementById('k-dir-sub').textContent = isUnder
-    ? `ต้อง${direction}กำลังไฟฟ้า +${deltaP.toFixed(2)} MW`
-    : `ต้อง${direction}กำลังไฟฟ้า −${deltaP.toFixed(2)} MW`;
+  
+  // อัปเดตสถานะกรณีที่ไม่ตอบสนอง (ค่าตกอยู่ใน Deadband)
+  if (deltaFeff === 0) {
+    document.getElementById('k-dir').textContent = '— ไม่ตอบสนอง';
+    document.getElementById('k-dir').style.color = 'var(--text-3)';
+    document.getElementById('k-dir-sub').textContent = 'ค่า |Δf| ไม่เกิน Deadband';
+  } else {
+    document.getElementById('k-dir').textContent = isUnder ? '▼ Under' : '▲ Over';
+    document.getElementById('k-dir').style.color = isUnder ? 'var(--blue)' : 'var(--amber)';
+    document.getElementById('k-dir-sub').textContent = isUnder
+      ? `ต้อง${direction}กำลังไฟฟ้า +${deltaP.toFixed(2)} MW`
+      : `ต้อง${direction}กำลังไฟฟ้า −${deltaP.toFixed(2)} MW`;
+  }
 
   // Build chart data (0–120s)
   const labels = [], powerData = [], freqData = [];
@@ -670,11 +676,13 @@ function calculate() {
       const ratio = Math.min((t - 22) / 16, 1);
       const eased = ratio < 0.5 ? 2*ratio*ratio : -1+(4-2*ratio)*ratio; // ease in-out
       p = pTest + (isUnder ? 1 : -1) * deltaP * eased;
-      f = fTest + (fNom - fTest) * eased * 0.3; // partial recovery
+      // ให้ความถี่ค้างอยู่ที่ความถี่ที่กรอกไปตลอด
+      f = fTest; 
     } else {
       // Sustained: hold at pTotal, freq stabilised
       p = pTotal;
-      f = fTest + (fNom - fTest) * 0.3;
+      // ให้ความถี่ค้างอยู่ที่ความถี่ที่กรอกไปตลอด
+      f = fTest; 
     }
     powerData.push(+p.toFixed(3));
     freqData.push(+f.toFixed(3));
@@ -790,11 +798,13 @@ function buildAllTables(pTest, fNom, droop, useDB, deadband, pContract) {
   function makeRow(df, pTest, fNom, droop, useDB, deadband, dir) {
     const absDf = Math.abs(df);
     const dfEff = Math.max(0, absDf - (useDB ? deadband : 0));
-    const dp = (dfEff / (fNom * droop)) * pTest;
+    // ตรวจสอบเพื่อไม่ให้แสดงค่าตอบสนอง หากอยู่ในช่วง Deadband
+    const dp = dfEff > 0 ? (dfEff / (fNom * droop)) * pTest : 0;
     const fSys = fNom + df;
     const pTotal = dir === 'under' ? pTest + dp : pTest - dp;
-    const resp = dir === 'under' ? `+${dp.toFixed(2)}` : `−${dp.toFixed(2)}`;
-    const cls = dir === 'under' ? 'pos' : 'neg';
+    const resp = dfEff > 0 ? (dir === 'under' ? `+${dp.toFixed(2)}` : `−${dp.toFixed(2)}`) : '0.00';
+    const cls = dfEff > 0 ? (dir === 'under' ? 'pos' : 'neg') : '';
+    
     return `
       <tr>
         <td>${fSys.toFixed(2)}</td>
