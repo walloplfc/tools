@@ -432,7 +432,7 @@
     <h1>Frequency Response Calculator</h1>
     <p>NCC / BNCC · Governor Droop Control · IEC 60870-5-104</p>
   </div>
-  <div class="header-badge">⚡ Power System Tool v2.1</div>
+  <div class="header-badge">⚡ Power System Tool v2.2</div>
 </header>
 
 <div class="main-grid">
@@ -541,7 +541,7 @@
         <div class="kpi-label">สถานะการตอบสนอง</div>
         <div class="kpi-value" id="k-dir" style="font-size:16px;padding-top:4px;">—</div>
         <div class="kpi-unit" id="k-dir-sub">Under / Over Frequency</div>
-        <div class="kpi-sub" id="k-time">Start ≤ 20s | Sustained 160s</div>
+        <div class="kpi-sub" id="k-time">Start ≤ 20s | Sustained 40-160s</div>
       </div>
     </div>
 
@@ -560,7 +560,7 @@
         <span class="zone event">Event (t=20s)</span>
         <span class="zone resp">Start Response (≤40s)</span>
         <span class="zone sust">Sustained Response (40–160s)</span>
-        <span class="zone recv">Recovery (&gt;160s)</span>
+        <span class="zone recv">Recovery (160–180s)</span>
       </div>
       <div class="chart-wrap" style="margin-top:12px;">
         <canvas id="responseChart"></canvas>
@@ -662,36 +662,43 @@ function calculate() {
   for (let t = 0; t <= 200; t++) {
     labels.push(t);
     let p, f;
+    
     if (t < 20) {
-      // Pre-event
+      // 1. Pre-event
       p = pTest;
       f = fNom;
     } else if (t < 22) {
-      // Event instant
+      // 2. Event instant (ความถี่เปลี่ยนฉับพลัน ในเวลา 2 วินาที)
       const ratio = (t - 20) / 2;
       f = fNom + deltaF * ratio;
       p = pTest;
     } else if (t < 40) {
-      // Response ramp
+      // 3. Response ramp (กำลังไฟฟ้าตอบสนองแบบ Ease-in-out ในเวลา 18 วินาที)
       const ratio = Math.min((t - 22) / 16, 1);
       const eased = ratio < 0.5 ? 2*ratio*ratio : -1+(4-2*ratio)*ratio;
       p = pTest + (isUnder ? 1 : -1) * deltaP * eased;
       f = fTest; 
     } else if (t <= 160) {
-      // Sustained Response (40–160s) ค้างค่าตามที่กรอก
+      // 4. Sustained Response
       p = pTotal;
       f = fTest; 
+    } else if (t < 162) {
+      // 5. Recovery Event (ความถี่เด้งกลับปกติ จำลองให้เหมือนช่วงที่ 2 โดยใช้เวลา 2 วินาทีเท่ากัน)
+      const ratio = (t - 160) / 2;
+      f = fTest + (fNom - fTest) * ratio;
+      p = pTotal;
+    } else if (t < 180) {
+      // 6. Recovery Ramp (กำลังไฟฟ้าฟื้นตัวกลับสู่ปกติ ใช้สมการ Ease-in-out และเวลา 18 วินาที เท่ากับช่วงที่ 3)
+      const ratio = Math.min((t - 162) / 16, 1);
+      const eased = ratio < 0.5 ? 2*ratio*ratio : -1+(4-2*ratio)*ratio;
+      p = pTotal - (isUnder ? 1 : -1) * deltaP * eased;
+      f = fNom;
     } else {
-      // After 160s: Recovery phase กลับไปที่ค่าเริ่มต้น (ทำ Ramp สั้นๆ 2 วินาทีเพื่อให้กราฟสวยงาม)
-      if (t <= 162) {
-        const ratio = (t - 160) / 2;
-        p = pTotal + (pTest - pTotal) * ratio;
-        f = fTest + (fNom - fTest) * ratio;
-      } else {
-        p = pTest;
-        f = fNom;
-      }
+      // 7. Normal Operation (หลัง 180s)
+      p = pTest;
+      f = fNom;
     }
+    
     powerData.push(+p.toFixed(3));
     freqData.push(+f.toFixed(3));
   }
