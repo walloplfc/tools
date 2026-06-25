@@ -122,7 +122,7 @@
   .field input[readonly] { color: var(--muted); cursor: not-allowed; opacity: 0.7; }
   .field input::placeholder { color: #bbb; }
 
-  /* ── Xmin radio ── */
+  /* ── Selector Radios ── */
   .xmin-selector { display: flex; gap: 8px; }
   .xmin-option {
     flex: 1; display: flex; align-items: center; justify-content: center;
@@ -174,7 +174,7 @@
   }
   .btn.secondary:hover { background: var(--surface2); }
 
-  /* ── Metrics (forward/Tab2) ── */
+  /* ── Metrics ── */
   .results { display: none; }
   .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
   .metric { background: var(--surface2); border-radius: 10px; padding: 14px; text-align: center; }
@@ -201,9 +201,9 @@
   .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
   .legend-item { display: flex; align-items: center; gap: 5px; }
 
-  /* ── Inverse result metrics (Tab1) ── */
+  /* ── Inverse result metrics ── */
   .inv-result { display: none; margin-top: 0; }
-  .inv-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .inv-metrics { display: grid; grid-template-columns: 1fr; gap: 10px; }
   .inv-metric {
     background: var(--orange-soft); border: 1px solid #f0c896;
     border-radius: 10px; padding: 14px; text-align: center;
@@ -236,7 +236,6 @@
 
   @media (max-width: 480px) {
     .metrics { grid-template-columns: 1fr; }
-    .inv-metrics { grid-template-columns: 1fr 1fr; }
     .m-val { font-size: 18px; }
     h1 { font-size: 22px; }
     .tab-btn { font-size: 11px; padding: 8px 4px; }
@@ -310,7 +309,7 @@
 
     <div class="inv-result card" id="results-inv">
       <div class="card-title">A, B Value ที่ได้</div>
-      <div class="inv-metrics">
+      <div class="inv-metrics" style="grid-template-columns: 1fr 1fr;">
         <div class="inv-metric">
           <div class="m-label">A — Gain / Slope</div>
           <div class="m-val" id="inv-res-a">—</div>
@@ -413,7 +412,7 @@
   <div id="panel-scaling" style="display:none;">
     <div class="info-note">
       คำนวณการแปลงค่าระหว่าง <strong>Raw Value</strong> และ <strong>Engineering Value</strong> ตามหลักการทำงานของอุปกรณ์หน้างาน (RTU) และ SCADA<br>
-      สูตร: <strong>E = Emin + [(R − Rmin) × (Emax − Emin)] / (Rmax − Rmin)</strong>
+      สูตรหลัก: <strong>E = Emin + [(R − Rmin) × (Emax − Emin)] / (Rmax − Rmin)</strong>
     </div>
 
     <div class="card">
@@ -422,11 +421,18 @@
       <div class="grid-2" style="margin-bottom:1rem;">
         <div class="field">
           <label>Raw Min (Rmin)</label>
-          <input type="number" id="scl-rmin" value="0" step="any">
+          <div class="xmin-selector">
+            <label class="xmin-option" id="rmin-opt-n32768">
+              <input type="radio" name="rmin-scl" value="-32768" onchange="updateRminStyle()"> −32768
+            </label>
+            <label class="xmin-option selected" id="rmin-opt-0">
+              <input type="radio" name="rmin-scl" value="0" checked onchange="updateRminStyle()"> 0
+            </label>
+          </div>
         </div>
         <div class="field">
           <label>Raw Max (Rmax)</label>
-          <input type="number" id="scl-rmax" value="32767" step="any">
+          <div class="xmax-fixed">32767 <span class="fixed-badge">คงที่</span></div>
         </div>
       </div>
 
@@ -464,13 +470,29 @@
 
     <div class="inv-result card" id="results-scl">
       <div class="card-title">ผลลัพธ์การแปลงค่า</div>
-      <div class="inv-metrics" style="grid-template-columns: 1fr;">
+      <div class="inv-metrics">
         <div class="inv-metric" style="background: var(--purple-soft); border-color: #d8b4fe;">
           <div class="m-label" id="res-scl-label" style="color: var(--purple);">Engineering Value (E)</div>
           <div class="m-val" id="res-scl-val" style="font-size: 32px;">—</div>
         </div>
       </div>
       <div class="inv-eq-display" id="scl-eq-display" style="border-left-color: var(--purple);"></div>
+      
+      <div class="divider"></div>
+      <div class="card-title">กราฟแสดงระดับการ Scale (Raw vs Eng)</div>
+      <div class="chart-container">
+        <canvas id="scalingChart" role="img" aria-label="กราฟ Raw vs Eng"></canvas>
+      </div>
+      <div class="legend">
+        <span class="legend-item">
+          <span style="display:inline-block;background:#6d28d9;border-radius:2px;width:16px;height:3px;"></span>
+          เส้นแสดงการสเกลค่า (Linear Scale)
+        </span>
+        <span class="legend-item">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#b85c00;"></span>
+          ค่าปัจจุบันที่คำนวณได้
+        </span>
+      </div>
     </div>
   </div>
 
@@ -480,6 +502,7 @@
 
 <script>
   let chartInstance = null;
+  let scalingChartInstance = null;
 
   // ── Helpers ─────────────────────────────────────────────
   function fmt(n) {
@@ -493,6 +516,9 @@
   function getXminFwd() {
     return parseFloat(document.querySelector('input[name="xmin-fwd"]:checked').value);
   }
+  function getRminScl() {
+    return parseFloat(document.querySelector('input[name="rmin-scl"]:checked').value);
+  }
 
   function updateXminStyle() {
     const val = getXminInv();
@@ -503,6 +529,11 @@
     const val = getXminFwd();
     document.getElementById('xmin-opt-n1-fwd').classList.toggle('selected', val === -1);
     document.getElementById('xmin-opt-0-fwd').classList.toggle('selected', val === 0);
+  }
+  function updateRminStyle() {
+    const val = getRminScl();
+    document.getElementById('rmin-opt-n32768').classList.toggle('selected', val === -32768);
+    document.getElementById('rmin-opt-0').classList.toggle('selected', val === 0);
   }
 
   // ── Tab switching ───────────────────────────────────────
@@ -716,19 +747,15 @@
     const errEl = document.getElementById('err-scl');
     errEl.style.display = 'none';
 
-    const rmin = parseFloat(document.getElementById('scl-rmin').value);
-    const rmax = parseFloat(document.getElementById('scl-rmax').value);
+    const rmin = getRminScl();
+    const rmax = 32767;
     const emin = parseFloat(document.getElementById('scl-emin').value);
     const emax = parseFloat(document.getElementById('scl-emax').value);
     const inputVal = parseFloat(document.getElementById('scl-input').value);
     const mode = document.getElementById('scl-mode').value;
 
-    if (isNaN(rmin) || isNaN(rmax) || isNaN(emin) || isNaN(emax) || isNaN(inputVal)) {
+    if (isNaN(emin) || isNaN(emax) || isNaN(inputVal)) {
       errEl.textContent = '⚠ กรุณากรอกข้อมูลตัวเลขให้ครบถ้วนทุกช่อง';
-      errEl.style.display = 'block'; return;
-    }
-    if (rmin === rmax) {
-      errEl.textContent = '⚠ Raw Min และ Raw Max ต้องไม่เท่ากัน (หารด้วย 0 ไม่ได้)';
       errEl.style.display = 'block'; return;
     }
     if (emin === emax) {
@@ -737,11 +764,14 @@
     }
 
     let result = 0;
+    let currentR = 0;
+    let currentE = 0;
     let eqHtml = '';
 
     if (mode === 'r2e') {
-      // E = Emin + (R - Rmin) * (Emax - Emin) / (Rmax - Rmin)
       result = emin + ((inputVal - rmin) * (emax - emin)) / (rmax - rmin);
+      currentR = inputVal;
+      currentE = result;
       document.getElementById('res-scl-label').textContent = 'Engineering Value (E)';
 
       eqHtml = `<strong>E = ${fmt(emin)} + [(${fmt(inputVal)} - ${fmt(rmin)}) × (${fmt(emax)} - ${fmt(emin)})] / (${fmt(rmax)} - ${fmt(rmin)})</strong><br>` +
@@ -749,8 +779,9 @@
                `E = <strong>${fmt(result)}</strong>`;
 
     } else {
-      // R = Rmin + (E - Emin) * (Rmax - Rmin) / (Emax - Emin)
       result = rmin + ((inputVal - emin) * (rmax - rmin)) / (emax - emin);
+      currentR = result;
+      currentE = inputVal;
       document.getElementById('res-scl-label').textContent = 'Raw Value (R)';
 
       eqHtml = `<strong>R = ${fmt(rmin)} + [(${fmt(inputVal)} - ${fmt(emin)}) × (${fmt(rmax)} - ${fmt(rmin)})] / (${fmt(emax)} - ${fmt(emin)})</strong><br>` +
@@ -763,6 +794,77 @@
     
     document.getElementById('results-scl').style.display = 'block';
     document.getElementById('results-scl').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // พล็อตเนื้อกราฟสำหรับแท็บ Scaling
+    drawScalingChart(rmin, rmax, emin, emax, currentR, currentE);
+  }
+
+  function drawScalingChart(rmin, rmax, emin, emax, currentR, currentE) {
+    if (scalingChartInstance) { scalingChartInstance.destroy(); }
+
+    const steps = 100;
+    const stepSize = (rmax - rmin) / steps;
+    const labels = [], data = [];
+    let closestIdx = 0;
+    let minDiff = Infinity;
+
+    for (let i = 0; i <= steps; i++) {
+      const r = rmin + i * stepSize;
+      const e = emin + ((r - rmin) * (emax - emin)) / (rmax - rmin);
+      labels.push(parseFloat(r.toFixed(2)));
+      data.push(parseFloat(e.toFixed(4)));
+
+      const diff = Math.abs(r - currentR);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = i;
+      }
+    }
+
+    const ctx = document.getElementById('scalingChart').getContext('2d');
+    scalingChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Linear Scale', data,
+            borderColor: '#6d28d9', borderWidth: 2,
+            pointRadius: 0, tension: 0, fill: false
+          },
+          {
+            label: 'Current Point',
+            data: labels.map((_, i) => i === closestIdx ? currentE : null),
+            borderColor: '#b85c00', backgroundColor: '#b85c00',
+            pointRadius: labels.map((_, i) => i === closestIdx ? 8 : 0),
+            showLine: false
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: items => 'Raw (R) = ' + parseFloat(items[0].label).toFixed(0),
+              label: item => 'Eng (E) = ' + parseFloat(item.raw).toFixed(4)
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            ticks: { color: '#6b6860', maxTicksLimit: 9 },
+            grid: { color: 'rgba(0,0,0,0.06)' }, border: { color: 'rgba(0,0,0,0.1)' }
+          },
+          y: {
+            ticks: { color: '#6b6860' },
+            grid: { color: 'rgba(0,0,0,0.06)' }, border: { color: 'rgba(0,0,0,0.1)' }
+          }
+        }
+      }
+    });
   }
 
   // ── Keyboard shortcut ───────────────────────────────────
