@@ -134,7 +134,7 @@
   .input-row {
     display: flex; align-items: center; gap: 0;
   }
-  .input-row input {
+  .input-row input[type="number"] {
     flex: 1;
     background: var(--bg-input);
     border: 1px solid var(--border-hi);
@@ -149,7 +149,7 @@
     transition: border-color .2s;
     width: 100%;
   }
-  .input-row input:focus { border-color: var(--teal); }
+  .input-row input[type="number"]:focus { border-color: var(--teal); }
   .input-row .suffix {
     background: var(--border);
     border: 1px solid var(--border-hi);
@@ -181,6 +181,26 @@
     font-size: 10px; color: var(--text-3); font-family: var(--font-mono);
     margin-top: 3px;
   }
+
+  /* Plant Type Radio group */
+  .radio-group {
+    display: flex; gap: 12px; margin-top: 6px;
+  }
+  .radio-card {
+    flex: 1;
+    background: var(--bg-input);
+    border: 1px solid var(--border-hi);
+    border-radius: 7px;
+    padding: 10px;
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: border-color .2s, background-color .2s;
+  }
+  .radio-card:has(input:checked) {
+    border-color: var(--teal);
+    background: rgba(0, 212, 200, 0.05);
+  }
+  .radio-card input { accent-color: var(--teal); cursor: pointer; }
+  .radio-card span { font-size: 12px; color: var(--text-1); font-weight: 500; font-family: var(--font-mono); }
 
   /* Deadband toggle */
   .toggle-row {
@@ -407,10 +427,6 @@
     .results-grid { grid-template-columns: 1fr; }
   }
 
-  /* Pulse animation for active status */
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-  .pulse { animation: pulse 2s ease-in-out infinite; }
-
   .info-bar {
     display: flex; gap: 10px; flex-wrap: wrap;
     padding: 10px 14px;
@@ -432,7 +448,7 @@
     <h1>Frequency Response Calculator</h1>
     <p>NCC / BNCC · Governor Droop Control · IEC 60870-5-104</p>
   </div>
-  <div class="header-badge">⚡ Power System Tool v2.2</div>
+  <div class="header-badge">⚡ Power System Tool v2.5</div>
 </header>
 
 <div class="main-grid">
@@ -441,9 +457,23 @@
       <div class="panel-title"><span class="dot"></span>พารามิเตอร์ระบบ</div>
 
       <div class="field">
+        <label>ประเภทเทคโนโลยี (Plant Type)</label>
+        <div class="radio-group">
+          <label class="radio-card">
+            <input type="radio" name="plantType" value="inverter" checked onchange="calculate()">
+            <span>Inverter Base</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="plantType" value="non_inverter" onchange="calculate()">
+            <span>Non-Inverter Base</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
         <label>กำลังไฟฟ้าตามสัญญา P<sub>contract</sub> <span class="unit">(MW)</span></label>
         <div class="input-row">
-          <input type="number" id="pContract" value="30" min="1" max="9999" step="1">
+          <input type="number" id="pContract" value="30" min="1" max="9999" step="1" oninput="calculate()">
           <span class="suffix">MW</span>
         </div>
       </div>
@@ -451,7 +481,7 @@
       <div class="field">
         <label>กำลังไฟฟ้าขณะทดสอบ P<sub>test</sub> <span class="unit">(MW)</span></label>
         <div class="input-row">
-          <input type="number" id="pTest" value="20" min="1" max="9999" step="1">
+          <input type="number" id="pTest" value="20" min="1" max="9999" step="1" oninput="calculate()">
           <span class="suffix">MW</span>
         </div>
       </div>
@@ -459,7 +489,7 @@
       <div class="field">
         <label>ความถี่ปกติ f<sub>nominal</sub> <span class="unit">(Hz)</span></label>
         <div class="input-row">
-          <input type="number" id="fNominal" value="50" min="45" max="65" step="0.1">
+          <input type="number" id="fNominal" value="50" min="45" max="65" step="0.1" oninput="calculate()">
           <span class="suffix">Hz</span>
         </div>
       </div>
@@ -479,12 +509,12 @@
         <div class="toggle-row" style="margin-bottom:8px;">
           <span class="toggle-label">ใช้ค่า Deadband</span>
           <label class="toggle-switch">
-            <input type="checkbox" id="useDeadband" onchange="toggleDeadband()">
+            <input type="checkbox" id="useDeadband" onchange="toggleDeadband()" checked>
             <span class="toggle-track"></span>
           </label>
         </div>
-        <div class="input-row" id="deadbandInput" style="opacity:.3;pointer-events:none;">
-          <input type="number" id="deadbandVal" value="0.1" min="0" max="1" step="0.01">
+        <div class="input-row" id="deadbandInput">
+          <input type="number" id="deadbandVal" value="0.30" min="0" max="1" step="0.01" oninput="calculate()">
           <span class="suffix">Hz</span>
         </div>
       </div>
@@ -492,17 +522,17 @@
       <div class="field">
         <label>ความถี่ทดสอบ — เลือกกรณี (Hz)</label>
         <div class="freq-chips" id="freqChips">
-          <span class="chip under" data-f="49.7" onclick="pickChip(this)">49.70 Hz</span>
-          <span class="chip under" data-f="49.5" onclick="pickChip(this)">49.50 Hz</span>
-          <span class="chip under" data-f="49.3" onclick="pickChip(this)">49.30 Hz</span>
-          <span class="chip over"  data-f="50.3" onclick="pickChip(this)">50.30 Hz</span>
-          <span class="chip over"  data-f="50.5" onclick="pickChip(this)">50.50 Hz</span>
-          <span class="chip over"  data-f="50.7" onclick="pickChip(this)">50.70 Hz</span>
+          <span class="chip under" data-f="49.70" onclick="pickChip(this)">49.70 Hz (-0.30)</span>
+          <span class="chip under" data-f="49.65" onclick="pickChip(this)">49.65 Hz (-0.35)</span>
+          <span class="chip under" data-f="49.50" onclick="pickChip(this)">49.50 Hz (-0.50)</span>
+          <span class="chip over"  data-f="50.30" onclick="pickChip(this)">50.30 Hz (+0.30)</span>
+          <span class="chip over"  data-f="50.35" onclick="pickChip(this)">50.35 Hz (+0.35)</span>
+          <span class="chip over"  data-f="50.50" onclick="pickChip(this)">50.50 Hz (+0.50)</span>
         </div>
         <div style="margin-top:10px;">
           <label>หรือกรอกเอง</label>
           <div class="input-row">
-            <input type="number" id="fTest" value="49.7" min="47" max="53" step="0.01">
+            <input type="number" id="fTest" value="49.70" min="47" max="53" step="0.01" oninput="calculate()">
             <span class="suffix">Hz</span>
           </div>
         </div>
@@ -587,24 +617,29 @@ let chartInstance = null;
 function syncDroop(v) {
   document.getElementById('droopDisplay').textContent = v + '%';
   document.getElementById('droopVal').value = v;
+  calculate();
 }
 function syncDroopInput(v) {
   document.getElementById('droopRange').value = v;
   document.getElementById('droopDisplay').textContent = v + '%';
+  calculate();
 }
 function toggleDeadband() {
   const db = document.getElementById('useDeadband').checked;
   const el = document.getElementById('deadbandInput');
   el.style.opacity = db ? '1' : '.3';
   el.style.pointerEvents = db ? 'auto' : 'none';
+  calculate();
 }
 function pickChip(el) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('fTest').value = el.dataset.f;
+  calculate();
 }
 
 function calculate() {
+  const plantType = document.querySelector('input[name="plantType"]:checked').value;
   const pContract = parseFloat(document.getElementById('pContract').value) || 30;
   const pTest     = parseFloat(document.getElementById('pTest').value) || 20;
   const fNom      = parseFloat(document.getElementById('fNominal').value) || 50;
@@ -613,11 +648,15 @@ function calculate() {
   const useDB     = document.getElementById('useDeadband').checked;
   const deadband  = useDB ? parseFloat(document.getElementById('deadbandVal').value) || 0 : 0;
 
+  // กำหนด Base Power ที่จะนำมาคำนวณ Droop
+  const pBase = plantType === 'inverter' ? pTest : pContract;
+
   const deltaF = fTest - fNom;
   const absDeltaF = Math.abs(deltaF);
   
   const deltaFeff = Math.max(0, absDeltaF - deadband);
-  const deltaP = deltaFeff > 0 ? (deltaFeff / (fNom * droop)) * pTest : 0;
+  // คำนวณ deltaP โดยอ้างอิงจาก pBase
+  const deltaP = deltaFeff > 0 ? (deltaFeff / (fNom * droop)) * pBase : 0;
   
   const isUnder = deltaF < 0;
   const pTotal = isUnder ? pTest + deltaP : pTest - deltaP;
@@ -628,9 +667,11 @@ function calculate() {
   const formulaBox = document.getElementById('formulaBox');
   const formulaText = document.getElementById('formulaText');
   formulaBox.style.display = 'block';
+  
+  const pBaseLabel = plantType === 'inverter' ? 'P<sub>test</sub>' : 'P<sub>contract</sub>';
   formulaText.innerHTML = `
-    <strong>Δf<sub>eff</sub></strong> = |${deltaF.toFixed(2)}|${useDB ? ` − ${deadband}` : ''} = ${deltaFeff.toFixed(3)} Hz &nbsp;|&nbsp;
-    <strong>ΔP</strong> = ${deltaFeff.toFixed(3)} / (${fNom}×${(droop*100).toFixed(1)}%) × ${pTest} = <strong style="color:var(--teal)">${deltaP.toFixed(3)} MW</strong>
+    <strong>Δf<sub>eff</sub></strong> = |${deltaF.toFixed(2)}|${useDB ? ` − ${deadband.toFixed(2)}` : ''} = ${deltaFeff.toFixed(3)} Hz &nbsp;|&nbsp;
+    <strong>ΔP</strong> = ${deltaFeff.toFixed(3)} / (${fNom}×${(droop*100).toFixed(1)}%) × ${pBaseLabel} (${pBase}) = <strong style="color:var(--teal)">${deltaP.toFixed(3)} MW</strong>
   `;
 
   // KPIs
@@ -668,12 +709,12 @@ function calculate() {
       p = pTest;
       f = fNom;
     } else if (t < 22) {
-      // 2. Event instant (ความถี่เปลี่ยนฉับพลัน ในเวลา 2 วินาที)
+      // 2. Event instant
       const ratio = (t - 20) / 2;
       f = fNom + deltaF * ratio;
       p = pTest;
     } else if (t < 40) {
-      // 3. Response ramp (กำลังไฟฟ้าตอบสนองแบบ Ease-in-out ในเวลา 18 วินาที)
+      // 3. Response ramp
       const ratio = Math.min((t - 22) / 16, 1);
       const eased = ratio < 0.5 ? 2*ratio*ratio : -1+(4-2*ratio)*ratio;
       p = pTest + (isUnder ? 1 : -1) * deltaP * eased;
@@ -683,18 +724,18 @@ function calculate() {
       p = pTotal;
       f = fTest; 
     } else if (t < 162) {
-      // 5. Recovery Event (ความถี่เด้งกลับปกติ จำลองให้เหมือนช่วงที่ 2 โดยใช้เวลา 2 วินาทีเท่ากัน)
+      // 5. Recovery Event
       const ratio = (t - 160) / 2;
       f = fTest + (fNom - fTest) * ratio;
       p = pTotal;
     } else if (t < 180) {
-      // 6. Recovery Ramp (กำลังไฟฟ้าฟื้นตัวกลับสู่ปกติ ใช้สมการ Ease-in-out และเวลา 18 วินาที เท่ากับช่วงที่ 3)
+      // 6. Recovery Ramp
       const ratio = Math.min((t - 162) / 16, 1);
       const eased = ratio < 0.5 ? 2*ratio*ratio : -1+(4-2*ratio)*ratio;
       p = pTotal - (isUnder ? 1 : -1) * deltaP * eased;
       f = fNom;
     } else {
-      // 7. Normal Operation (หลัง 180s)
+      // 7. Normal Operation
       p = pTest;
       f = fNom;
     }
@@ -792,24 +833,34 @@ function calculate() {
     }
   });
 
-  buildAllTables(pTest, fNom, droop, useDB, deadband, pContract);
+  buildAllTables(pTest, fNom, droop, useDB, deadband, pContract, plantType);
 }
 
-function buildAllTables(pTest, fNom, droop, useDB, deadband, pContract) {
-  const step = fNom * 0.006;
+function buildAllTables(pTest, fNom, droop, useDB, deadband, pContract, plantType) {
+  // สร้าง case ทั้ง 3 ระดับความถี่ โดยอิงจาก fNom (ปกติจะใช้ 50Hz)
+  const step1 = fNom * 0.006; // 0.30 Hz
+  const step2 = fNom * 0.007; // 0.35 Hz
+  const step3 = fNom * 0.010; // 0.50 Hz
+  
   const underCases = [
-    { label: 'กรณีที่ 1', df: -(step), name: `−${step.toFixed(2)} Hz` },
-    { label: 'กรณีที่ 2', df: -(step * 1.667), name: `−${(step*1.667).toFixed(2)} Hz` },
+    { df: -step1 },
+    { df: -step2 },
+    { df: -step3 }
   ];
   const overCases = [
-    { label: 'กรณีที่ 1', df: +(step), name: `+${step.toFixed(2)} Hz` },
-    { label: 'กรณีที่ 2', df: +(step * 1.667), name: `+${(step*1.667).toFixed(2)} Hz` },
+    { df: +step1 },
+    { df: +step2 },
+    { df: +step3 }
   ];
 
-  function makeRow(df, pTest, fNom, droop, useDB, deadband, dir) {
+  function makeRow(df, pTest, fNom, droop, useDB, deadband, dir, pContract, plantType) {
+    const pBase = plantType === 'inverter' ? pTest : pContract;
     const absDf = Math.abs(df);
     const dfEff = Math.max(0, absDf - (useDB ? deadband : 0));
-    const dp = dfEff > 0 ? (dfEff / (fNom * droop)) * pTest : 0;
+    
+    // คำนวณโดยใช้ pBase ที่อิงจากตัวเลือก
+    const dp = dfEff > 0 ? (dfEff / (fNom * droop)) * pBase : 0;
+    
     const fSys = fNom + df;
     const pTotal = dir === 'under' ? pTest + dp : pTest - dp;
     const resp = dfEff > 0 ? (dir === 'under' ? `+${dp.toFixed(2)}` : `−${dp.toFixed(2)}`) : '0.00';
@@ -832,11 +883,11 @@ function buildAllTables(pTest, fNom, droop, useDB, deadband, pContract) {
       </tr></thead><tbody>`;
 
   let uHtml = tableHeader;
-  underCases.forEach(c => { uHtml += makeRow(c.df, pTest, fNom, droop, useDB, deadband, 'under'); });
+  underCases.forEach(c => { uHtml += makeRow(c.df, pTest, fNom, droop, useDB, deadband, 'under', pContract, plantType); });
   uHtml += '</tbody></table>';
 
   let oHtml = tableHeader;
-  overCases.forEach(c => { oHtml += makeRow(c.df, pTest, fNom, droop, useDB, deadband, 'over'); });
+  overCases.forEach(c => { oHtml += makeRow(c.df, pTest, fNom, droop, useDB, deadband, 'over', pContract, plantType); });
   oHtml += '</tbody></table>';
 
   document.getElementById('underTable').innerHTML = uHtml;
@@ -844,6 +895,8 @@ function buildAllTables(pTest, fNom, droop, useDB, deadband, pContract) {
 }
 
 window.addEventListener('load', () => {
+  toggleDeadband(); // อัปเดตสถานะความสว่างของกล่อง Deadband ตามค่าเริ่มต้นที่ตั้งให้ติ๊กถูก
+  document.getElementById('fTest').value = '49.70'; // ซิงก์ค่าเริ่มต้นของช่องกรอกให้ตรงกับปุ่มแรก
   document.querySelector('.chip').classList.add('active');
   calculate();
 });
