@@ -1,1039 +1,1768 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Interactive Plant Control Flowchart</title>
-<style>
-:root {
-  --bg:#f1f5fa;
-  --card:#ffffff;
-  --ink:#19304c;
-  --muted:#526780;
-  --line:#d8e2ee;
-  --accent:#2563eb;
-  --soft:#eef4ff;
-  --good:#147549;
-  --bad:#ab2929;
-}
-* { box-sizing:border-box }
-body {
-  margin:0;
-  background:var(--bg);
-  color:var(--ink);
-  font:16px/1.65 system-ui,Tahoma,sans-serif;
-}
-header {
-  padding:28px 18px;
-  background:#142b48;
-  color:white;
-}
-.wrap { max-width:1240px; margin:auto }
-h1 { margin:0; font-size:clamp(24px,4vw,34px) }
-h2 { margin:0 0 14px; font-size:22px }
-h3 { margin:12px 0; font-size:19px }
-p { margin:8px 0 }
-main { padding:20px 16px 40px }
-.subtitle { color:#cfdef2 }
-.card {
-  padding:22px;
-  margin-bottom:20px;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:16px;
-}
-.muted { color:var(--muted); font-size:14px }
-.notice,.result {
-  padding:13px 16px;
-  border-radius:10px;
-  background:#fff5df;
-  color:#785000;
-  margin:12px 0;
-}
-.result.neutral { background:#edf2f8; color:var(--ink) }
-.result.ok { background:#e5f6ed; color:var(--good) }
-.result.error { background:#fff0ee; color:var(--bad) }
-button,input { font:inherit }
-button {
-  cursor:pointer;
-  border:1px solid var(--line);
-  border-radius:9px;
-  background:white;
-  color:var(--ink);
-  padding:10px 15px;
-}
-button:hover { background:var(--soft) }
-button.primary,button.active {
-  color:white;
-  background:var(--accent);
-  border-color:var(--accent);
-}
-button:disabled { cursor:not-allowed; opacity:.45 }
-button:focus-visible,input:focus-visible,summary:focus-visible {
-  outline:3px solid #df9e2b;
-  outline-offset:3px;
-}
-input[type=number] {
-  width:100%;
-  padding:10px 12px;
-  border:1px solid #a5b5c9;
-  border-radius:8px;
-}
-.field { display:grid; gap:6px; max-width:360px }
-.toolbar,.tabs,.local-options {
-  display:flex;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:10px;
-}
-.tabs button { min-width:95px; font-weight:700 }
-.stats {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
-  margin:16px 0;
-}
-.stat {
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:#f8faff;
-  padding:16px;
-}
-.stat strong {
-  display:block;
-  font-size:21px;
-  color:var(--accent);
-}
-.table-wrap { overflow:auto }
-table { border-collapse:collapse; width:100%; font-size:14px }
-th,td {
-  padding:11px;
-  text-align:left;
-  vertical-align:top;
-  border-bottom:1px solid var(--line);
-}
-th { background:#edf3f9; white-space:nowrap }
-.signal {
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
-  padding:15px;
-  border-radius:10px;
-  background:#142b48;
-  color:#edf5ff;
-  font:14px/1.8 ui-monospace,monospace;
-  margin:14px 0;
-}
-.local-options label {
-  border:1px solid var(--line);
-  padding:7px 11px;
-  border-radius:8px;
-}
-.badge {
-  display:inline-block;
-  padding:4px 11px;
-  border-radius:20px;
-  font-size:13px;
-  color:var(--accent);
-  background:var(--soft);
-}
-.flow-layout {
-  display:grid;
-  grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);
-  gap:20px;
-  margin-top:18px;
-  align-items:start;
-}
-.flow-pane {
-  padding:20px 12px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background-color:#f8fafd;
-  background-image:radial-gradient(#d8e2ed 1px,transparent 1px);
-  background-size:18px 18px;
-  max-height:760px;
-  overflow:auto;
-}
-.flow-title { text-align:center; margin-bottom:18px }
-.flow-stack { max-width:470px; margin:auto }
-.node {
-  display:block;
-  width:100%;
-  text-align:center;
-  background:white;
-  border:2px solid #b9c8da;
-  border-radius:12px;
-  padding:13px 15px;
-  box-shadow:0 3px 8px #19304c08;
-}
-.node .node-heading {
-  display:block;
-  font-weight:700;
-}
-.node .node-sub {
-  display:block;
-  font-size:13px;
-  color:var(--muted);
-  margin-top:4px;
-  overflow-wrap:anywhere;
-}
-.node .node-number {
-  display:inline-grid;
-  place-items:center;
-  background:#eaf0f8;
-  width:25px;
-  height:25px;
-  border-radius:50%;
-  margin-right:7px;
-}
-.node.terminal { border-radius:40px }
-.node.decision {
-  border-style:dashed;
-  background:#fffbee;
-}
-.node.warning { border-color:#c8892c; background:#fff7e8 }
-.node.selected {
-  border-color:var(--accent);
-  background:var(--soft);
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 15%,transparent);
-}
-.node.selected .node-number {
-  background:var(--accent);
-  color:white;
-}
-.arrow {
-  text-align:center;
-  color:#66809f;
-  font-size:23px;
-  line-height:1.2;
-  padding:5px 0;
-}
-.arrow small {
-  display:block;
-  font-size:12px;
-  line-height:1.5;
-  color:var(--muted);
-}
-.branch {
-  padding:10px 12px;
-  margin:8px 8px 10px 25px;
-  border-left:3px solid #c9953c;
-  border-radius:0 8px 8px 0;
-  font-size:13px;
-  background:#fff6e5;
-  color:#75511a;
-}
-.loop-panel {
-  border:1px dashed var(--accent);
-  background:var(--soft);
-  border-radius:10px;
-  margin:10px 0;
-  padding:12px;
-  text-align:center;
-  font-size:13px;
-}
-.loop-panel button { margin-top:8px; font-size:13px }
-.detail {
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:#f8faff;
-  padding:20px;
-  position:sticky;
-  top:16px;
-}
-progress { width:100%; height:12px; accent-color:var(--accent) }
-details { border-top:1px solid var(--line); padding:12px 0 }
-summary { cursor:pointer; font-weight:600 }
-ul { margin:10px 0; padding-left:22px }
-li { margin:0 }
-footer { text-align:center; color:var(--muted); font-size:13px }
-@media(max-width:850px) {
-  .stats,.flow-layout { grid-template-columns:1fr }
-  .detail { position:static; order:-1 }
-  .flow-pane { max-height:600px }
-  .card { padding:16px }
-}
-@media print {
-  body { background:white }
-  header { background:white; color:black }
-  .subtitle { color:#333 }
-  .toolbar,.tabs { display:none }
-  .flow-layout { grid-template-columns:1fr }
-  .flow-pane { max-height:none; overflow:visible }
-  .detail { position:static }
-  .signal { background:#eee; color:black }
-  .node { break-inside:avoid }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCADA 4-Mode Control Sequence & Interactive Flowchart (NCC - PLC_SDCE-P)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"IBM Plex Sans Thai"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        scada: {
+                            bg: '#090d16',
+                            panel: '#111827',
+                            card: '#1e293b',
+                            border: '#334155',
+                            cyan: '#06b6d4',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e',
+                            purple: '#a855f7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #090d16;
+            color: #e2e8f0;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.05), transparent 25%),
+                linear-gradient(to right, rgba(51, 65, 85, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(51, 65, 85, 0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+        }
+
+        /* LED Status Indicators */
+        .led-on-green {
+            background-color: #10b981;
+            box-shadow: 0 0 10px #10b981, 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+        .led-on-cyan {
+            background-color: #06b6d4;
+            box-shadow: 0 0 10px #06b6d4, 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+        .led-on-amber {
+            background-color: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b, 0 0 20px rgba(245, 158, 11, 0.5);
+        }
+        .led-on-red {
+            background-color: #f43f5e;
+            box-shadow: 0 0 10px #f43f5e, 0 0 20px rgba(244, 63, 94, 0.5);
+        }
+        .led-off {
+            background-color: #334155;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+        }
+
+        /* Flowchart Node Animations */
+        .flow-node {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .flow-node-active {
+            border-color: #06b6d4 !important;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.25), inset 0 0 12px rgba(6, 182, 212, 0.1);
+            transform: translateY(-2px);
+        }
+        .flow-node-completed {
+            border-color: #10b981 !important;
+            background-color: rgba(16, 185, 129, 0.07) !important;
+        }
+        .flow-node-deactivated {
+            border-color: #f59e0b !important;
+            background-color: rgba(245, 158, 11, 0.08) !important;
+        }
+
+        /* Animated Connector Line */
+        .flow-connector {
+            width: 3px;
+            height: 28px;
+            background-color: #334155;
+            margin: 0 auto;
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+        .flow-connector.active {
+            background-color: #06b6d4;
+            box-shadow: 0 0 8px #06b6d4;
+        }
+        .flow-connector.completed {
+            background-color: #10b981;
+        }
+        .flow-connector::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: -4.5px;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 7px solid #334155;
+            transition: border-top-color 0.3s ease;
+        }
+        .flow-connector.active::after {
+            border-top-color: #06b6d4;
+        }
+        .flow-connector.completed::after {
+            border-top-color: #10b981;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
 </head>
+<body class="min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-white pb-16">
 
-<body>
-<header>
-  <div class="wrap">
-    <h1>Interactive Control Flowchart</h1>
-    <p class="subtitle">KV / MVAR / PF / MW — เลือกโหมดเพื่อเปลี่ยน Flowchart</p>
-    <p class="subtitle">115 kV ±5% • MW PPA • MVAR @ 0.90 PF</p>
-  </div>
-</header>
+    <!-- Top SCADA Header Bar -->
+    <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">SCADA 4-Mode Control Sequence & Flowchart</h1>
+                        <span class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                            PLC_SDCE-P &leftrightarrow; NCC
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400">ระบบจำลองและอธิบายลอจิกควบคุมแรงดันและกำลังไฟฟ้า 4 โหมด (KV / MVAR / PF / MW)</p>
+                </div>
+            </div>
 
-<main class="wrap">
-  <div class="notice">
-    <strong>สำหรับเรียนรู้และทบทวนข้อกำหนดเท่านั้น</strong><br>
-    หน้านี้ไม่เชื่อมต่อ PLC/NCC ไม่ส่งคำสั่งจริง
-    การคลิกหรือเล่นอัตโนมัติเป็นการเดินบทเรียน ไม่ใช่การจำลองยืนยันสถานะอุปกรณ์
-  </div>
-
-  <section class="card">
-    <h2>1. กำหนด MW PPA และ Limit</h2>
-    <label class="field">
-      MW PPA ของโรงไฟฟ้า
-      <input id="ppa" type="number" min="0" step="any"
-        placeholder="กรอก เช่น 100">
-    </label>
-    <p class="muted">
-      ใช้กำลังตามสัญญา PPA ไม่ใช่ Actual MW
-      คำนวณ MVAR แบบสมมาตร Low = −Qmax / High = +Qmax ตามข้อกำหนดนี้
-    </p>
-
-    <div id="ppaStatus" class="result neutral" role="status"></div>
-
-    <div class="stats">
-      <div class="stat">
-        Voltage Limit
-        <strong>109.25–120.75 kV</strong>
-        <span class="muted">115 × 0.95 ถึง 115 × 1.05</span>
-      </div>
-      <div class="stat">
-        MW Limit
-        <strong id="mwValue">รอ MW PPA</strong>
-        <span class="muted">Low = 0 / High = PPA</span>
-      </div>
-      <div class="stat">
-        MVAR Limit @ 0.90 PF
-        <strong id="mvarValue">รอ MW PPA</strong>
-        <span class="muted">Low = −Qmax / High = +Qmax</span>
-      </div>
-    </div>
-
-    <div class="signal">Qmax = MW PPA × tan(acos(0.90))
-     = MW PPA × √(1 / 0.90² − 1)
-     ≈ MW PPA × 0.484322</div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>โหมด</th><th>Low</th><th>High</th><th>สัญญาณ</th></tr>
-        </thead>
-        <tbody id="limitsTable"></tbody>
-      </table>
-    </div>
-
-    <p class="muted">
-      ปัดเฉพาะค่าที่แสดง คำนวณและตรวจด้วยค่าความละเอียดเต็ม
-      Limit ตาม PPA ไม่ใช่การรับรอง Capability ของโรงไฟฟ้าทุกสภาวะ
-      และไม่เปลี่ยน Communication Scale ให้อัตโนมัติ
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>2. Local Mode และ Cut-off Switch</h2>
-    <p>
-      <code>DI STN_High/Low_CO_SW</code>:
-      <strong>Remote = 1 / Local = 0</strong>
-      ใช้กับ KV, MVAR, PF และ MW
-    </p>
-    <p class="muted">
-      KV/MVAR/PF เลือกได้ไม่เกินหนึ่งโหมด ส่วน MW เปิดร่วมได้
-      ตัวเลือกด้านล่างเป็นบทเรียนแยกจาก Flowchart ไม่ใช่สถานะจริง
-    </p>
-    <div class="local-options" id="localOptions">
-      <label><input type="radio" name="local" value="NONE" checked> ไม่เลือก</label>
-      <label><input type="radio" name="local" value="KV"> KV</label>
-      <label><input type="radio" name="local" value="MV"> MVAR</label>
-      <label><input type="radio" name="local" value="PF"> PF</label>
-      <label><input type="checkbox" id="localMW"> MW</label>
-    </div>
-    <div id="localStatus" class="signal" aria-live="polite"></div>
-  </section>
-
-  <section class="card" id="flowSection">
-    <h2>3. Flowchart แบบ Interactive</h2>
-    <div class="tabs" id="modeTabs" aria-label="เลือกโหมด Flowchart">
-      <button type="button" data-mode="KV" class="active" aria-pressed="true">KV</button>
-      <button type="button" data-mode="MV" aria-pressed="false">MVAR</button>
-      <button type="button" data-mode="PF" aria-pressed="false">PF</button>
-      <button type="button" data-mode="MW" aria-pressed="false">MW</button>
-    </div>
-
-    <p id="flowSummary" class="muted"></p>
-
-    <div class="toolbar">
-      <button type="button" id="prev">← ก่อนหน้า</button>
-      <button type="button" id="next" class="primary">ถัดไป →</button>
-      <button type="button" id="play">เล่นอัตโนมัติ</button>
-      <button type="button" id="reset">เริ่มใหม่</button>
-    </div>
-
-    <p class="muted">
-      คลิกกล่องเพื่ออ่านรายละเอียด • เส้นทางหลักแสดงกรณีคำสั่งสำเร็จ
-      • ข้อยกเว้นที่ยังไม่กำหนดจะแสดงเป็นหมายเหตุ ไม่สร้าง Logic แทนโรงไฟฟ้า
-    </p>
-
-    <progress id="progress" value="1" max="10"
-      aria-label="ความคืบหน้าบทเรียน"></progress>
-
-    <div class="flow-layout">
-      <div class="flow-pane" id="flowPane">
-        <div class="flow-title">
-          <span class="badge" id="flowTitle"></span>
+            <!-- Live System Status Pill -->
+            <div class="flex items-center gap-4 bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span id="header-co-led" class="w-3 h-3 rounded-full led-on-green"></span>
+                    <span class="text-xs font-mono text-slate-400">CO_SW:</span>
+                    <span id="header-co-text" class="text-xs font-mono font-bold text-emerald-400">REMOTE (1)</span>
+                </div>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono text-slate-400">V/Q Control:</span>
+                    <span id="header-vq-mode" class="text-xs font-mono font-bold text-amber-400">LOCAL MV_MODE</span>
+                </div>
+                <div class="h-4 w-px bg-slate-800"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono text-slate-400">MW Control:</span>
+                    <span id="header-mw-mode" class="text-xs font-mono font-bold text-emerald-400">LOCAL MW_MODE</span>
+                </div>
+            </div>
         </div>
-        <div class="flow-stack" id="flowNodes"
-          aria-label="แผนผังลำดับการควบคุม"></div>
-      </div>
-
-      <aside class="detail" aria-live="polite">
-        <span class="badge" id="stepCount"></span>
-        <h3 id="detailTitle"></h3>
-        <p id="detailText"></p>
-        <div class="signal" id="detailSignal"></div>
-        <div class="notice" id="detailNote"></div>
-      </aside>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>4. ทดลองตรวจ Setpoint ของโหมดที่เลือก</h2>
-    <p id="spDescription"></p>
-    <div id="spControls">
-      <label class="field">
-        Setpoint ทดลอง
-        <input id="sp" type="number" step="any"
-          placeholder="กรอก Setpoint">
-      </label>
-      <button type="button" class="primary" id="checkSP"
-        style="margin-top:12px">ตรวจ Setpoint</button>
-    </div>
-    <div class="result neutral" id="spResult" role="status"></div>
-    <p class="muted">
-      ตรวจช่วงตัวเลขเท่านั้น ไม่ส่งคำสั่ง ไม่ Clamp
-      และไม่ตัดสิน Permissive หรือ Capability จริง
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>5. I/O ของโหมดที่เลือก</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>ชนิด</th><th>หมายเลข*</th><th>Tag</th><th>หน้าที่</th></tr>
-        </thead>
-        <tbody id="ioTable"></tbody>
-      </table>
-    </div>
-    <p class="muted">
-      DO/AO: NCC → โรงไฟฟ้า | DI/AI: โรงไฟฟ้า → NCC
-      ชื่อบางจุดละ SDCE-P ชั้นนอก
-      * AO แสดง Point ID; IOA จริงในเอกสารเดิมเป็น ### ต้องยืนยัน
-    </p>
-  </section>
-
-  <section class="card">
-    <h2>6. ประเด็นที่ต้องยืนยันก่อนพัฒนา PLC</h2>
-
-    <details open>
-      <summary>OFF MWRD แล้ว Feedback = 1 ตามข้อมูลล่าสุด</summary>
-      <p>
-        ข้อมูลล่าสุดระบุ OFF DO 6006 แล้ว DI STN_NCC/BNCC_MWRD = 1
-        ต่างจาก RD ของอีกสามโหมดที่เป็น 0
-        Flowchart จึงไม่ถือว่า RD ปิดสำเร็จ และไม่แก้เป็น 0 เอง
-        ต้องยืนยันค่าที่ถูกต้องกับผู้ออกแบบ
-      </p>
-    </details>
-
-    <details>
-      <summary>PF Limit และ MVAR @ 0.90 PF</summary>
-      <ul>
-        <li>MVAR คำนวณจาก MW PPA คงที่ ไม่ใช่ Actual MW</li>
-        <li>เมื่อ Actual MW ต่ำกว่า PPA การใช้ MVAR ถึง Limit นี้ไม่ได้รับประกันว่า Actual PF เป็น 0.90</li>
-        <li>High PF = +0.90 และ Low PF = −0.90 ยังต้องยืนยันเครื่องหมาย Leading/Lagging และการแทน Unity PF</li>
-        <li>จึงไม่ตีความอัตโนมัติว่าทุกค่าระหว่าง −0.90 ถึง +0.90 เป็น Setpoint ที่อนุญาต</li>
-        <li>ต้องตรวจ Capability Curve และขีดจำกัดอุปกรณ์เพิ่มเติม</li>
-      </ul>
-    </details>
-
-    <details>
-      <summary>การเปลี่ยนโหมดและการกลับ Local</summary>
-      <ul>
-        <li>กำหนด Interlock และวิธีจัดการ Remote KV/MVAR/PF ที่สั่ง ON ซ้อนกัน</li>
-        <li>MW ทำงานร่วมโหมดอื่นได้ตามข้อกำหนดภาพรวม แต่ต้องระบุคู่ Remote/Local และ Remote/Remote ให้ชัดเจน</li>
-        <li>Sequence Remote MW ที่ให้มาระบุให้คงโหมดอื่นใน Local จึงยังไม่จำลอง Remote หลายโหมดพร้อมกัน</li>
-        <li>กำหนดผลเมื่อ Cut-off switch เปลี่ยนระหว่าง Remote และรายละเอียด High/Low side</li>
-        <li>กำหนดบทบาท RD, Timeout, Communication Failure และ Feedback Failure</li>
-        <li>Local MV “ค่าปัจจุบัน” หลังออกจาก KV/MVAR ต้องยืนยัน Actual MVAR หรือ Setpoint เดิม</li>
-        <li>หลังออกจาก PF ยังไม่ระบุค่าเริ่มต้น Local MV Setpoint</li>
-        <li>กำหนด Reject/Clamp/Hold สำหรับ Setpoint นอก Limit และการส่ง Alarm</li>
-        <li>กำหนด Setpoint Feedback ก่อนหรือหลังตรวจ Limit และ Ramp สำหรับเปลี่ยนโหมด</li>
-      </ul>
-    </details>
-
-    <details>
-      <summary>Tag และ Scaling ที่ต้องตรวจแก้</summary>
-      <ul>
-        <li>Sequence MVAR มีคำว่า Remote KV; หน้านี้ใช้ Remote MVAR ตามหัวข้อและสัญญาณ VAGC/SPMV</li>
-        <li>DO 6005: Sequence ใช้ PLC_SDCE-P AGC แต่ตารางเดิมใช้ STN_NCC/BNCC AGC</li>
-        <li>DI 10: Comment WAGC แต่ Tag AGC; DI 12: Comment MW ควรตรวจเป็น PF</li>
-        <li>AI 3 STN_MW SETTING ควรใช้หน่วย MW; AO 9002 ควรตรวจหน่วย MVAR; AO 9004 ควรเป็น PF</li>
-        <li>AI 6 SPMV และ AO/AI ของ KV ต้องตรวจ Raw Range และ Mapping</li>
-        <li>เมื่อเปลี่ยน PPA ต้องตรวจ Communication Scale ให้รองรับ MW และ MVAR Limit ใหม่</li>
-        <li>AI STN_115KV SETTING เป็นจุดรายงานค่า ต้องระบุตัวแปรควบคุมภายใน PLC ที่เชื่อมโยง</li>
-      </ul>
-    </details>
-  </section>
-
-  <footer>Offline Interactive HTML • ไม่มีการเชื่อมต่อระบบควบคุมจริง</footer>
-</main>
-
-<script>
-"use strict";
-
-const $ = id => document.getElementById(id);
-const Q_FACTOR = Math.sqrt(1 / (0.9 ** 2) - 1);
-const V_LOW = 115 * 0.95;
-const V_HIGH = 115 * 1.05;
-
-const format = value => new Intl.NumberFormat("en-US", {
-  maximumFractionDigits:4
-}).format(value);
-
-const modes = {
-  KV: {
-    name:"KV", unit:"kV", color:"#2563eb",
-    rd:"KVRD", rdDO:6003, rdDI:8,
-    control:"AGVC", controlDO:6001, controlDI:6,
-    sp:"SPKV", ao:9001, ai:5,
-    low:"LKV", lowAI:10, high:"HKV", highAI:9
-  },
-  MV: {
-    name:"MVAR", unit:"MVAR", color:"#087f73",
-    rd:"MVRD", rdDO:6004, rdDI:9,
-    control:"VAGC", controlDO:6002, controlDI:7,
-    sp:"SPMV", ao:9002, ai:6,
-    low:"LMV", lowAI:12, high:"HMV", highAI:11
-  },
-  PF: {
-    name:"PF", unit:"PF", color:"#7c3abd",
-    rd:"PFRD", rdDO:6009, rdDI:13,
-    control:"RPFC", controlDO:6008, controlDI:12,
-    sp:"SPPF", ao:9004, ai:8
-  },
-  MW: {
-    name:"MW", unit:"MW", color:"#b65b10",
-    rd:"MWRD", rdDO:6006, rdDI:11,
-    control:"AGC", controlDO:6005, controlDI:10,
-    sp:"SPMW", ao:9003, ai:7,
-    low:"LMW", lowAI:14, high:"HMW", highAI:13
-  }
-};
-
-let mode = "KV";
-let currentStep = 0;
-let timer = null;
-let sequence = [];
-
-function ppa() {
-  const raw = $("ppa").value.trim();
-  if (raw === "") return null;
-  const value = Number(raw);
-  return Number.isFinite(value) && value > 0 ? value : null;
-}
-
-function limits(key) {
-  if (key === "KV") return [V_LOW,V_HIGH];
-  if (key === "PF") return null;
-  const p = ppa();
-  if (p === null) return null;
-  if (key === "MW") return [0,p];
-  return [-p * Q_FACTOR,p * Q_FACTOR];
-}
-
-function rangeText(key) {
-  if (key === "PF") {
-    return "Low PF −0.90 / High PF +0.90 — ต้องยืนยันรูปแบบช่วง";
-  }
-  const range = limits(key);
-  return range
-    ? `${format(range[0])} ถึง ${format(range[1])} ${modes[key].unit}`
-    : "รอกรอก MW PPA";
-}
-
-function table(id,rows) {
-  $(id).replaceChildren();
-  rows.forEach(row => {
-    const tr = document.createElement("tr");
-    row.forEach(value => {
-      const td = document.createElement("td");
-      td.textContent = value;
-      tr.append(td);
-    });
-    $(id).append(tr);
-  });
-}
-
-function renderLimits() {
-  const p = ppa();
-  const q = p === null ? null : p * Q_FACTOR;
-
-  $("mwValue").textContent = p === null
-    ? "รอ MW PPA" : `0 ถึง ${format(p)} MW`;
-  $("mvarValue").textContent = q === null
-    ? "รอ MW PPA" : `−${format(q)} ถึง +${format(q)} MVAR`;
-
-  $("ppaStatus").className = p === null
-    ? "result neutral" : "result ok";
-  $("ppaStatus").textContent = p === null
-    ? "กรุณากรอก MW PPA มากกว่า 0; KV Limit ยังคงเป็น 109.25–120.75 kV"
-    : `PPA ${format(p)} MW → High MVAR +${format(q)} / Low MVAR −${format(q)} @ 0.90 PF`;
-
-  table("limitsTable",[
-    ["KV","109.25 kV","120.75 kV","AI 10 LKV / AI 9 HKV"],
-    ["MW","0 MW",p === null ? "รอ PPA" : `${format(p)} MW`,
-      "AI 14 LMW / AI 13 HMW"],
-    ["MVAR",q === null ? "รอ PPA" : `−${format(q)} MVAR`,
-      q === null ? "รอ PPA" : `+${format(q)} MVAR`,
-      "AI 12 LMV / AI 11 HMV"],
-    ["PF","−0.90 ตามต้นทาง","+0.90 ตามต้นทาง",
-      "Limit ภายในโรง; ยังไม่ยืนยันช่วง Setpoint ที่อนุญาต"]
-  ]);
-}
-
-function buildSequence() {
-  const m = modes[mode];
-  const mw = mode === "MW";
-  const range = limits(mode);
-
-  const limitSignals = mode === "PF"
-    ? "Low PF = −0.90\nHigh PF = +0.90\nต้องยืนยันเครื่องหมายและช่วงที่อนุญาต"
-    : `AI ${m.lowAI} PLC_SDCE-P ${m.low} = ` +
-      (range ? `${format(range[0])} ${m.unit}` : "รอ PPA") +
-      `\nAI ${m.highAI} PLC_SDCE-P ${m.high} = ` +
-      (range ? `${format(range[1])} ${m.unit}` : "รอ PPA");
-
-  const localOff = mw
-    ? "STN_MW_MODE = 0"
-    : "STN_KV_MODE = 0\nSTN_MV_MODE = 0\nSTN_PF_MODE = 0";
-
-  const localOn = mw
-    ? "STN_MW_MODE = 1"
-    : "STN_KV_MODE = 0\nSTN_MV_MODE = 1\nSTN_PF_MODE = 0";
-
-  const localSP = mw
-    ? "Local MW Setpoint = Actual MW ณ ขณะปลด"
-    : mode === "PF"
-      ? "Local MV Setpoint เริ่มต้น: ยังไม่ระบุ"
-      : "Local MV Setpoint = ค่าปัจจุบัน (ต้องยืนยันความหมาย)";
-
-  return [
-    {
-      type:"terminal",
-      title:`NCC ON ${m.rd}`,
-      sub:`DO ${m.rdDO} = ON`,
-      text:`เริ่มลำดับ Remote ${m.name} โดยตรวจสถานะ Remote/Local และส่งคำสั่ง RD`,
-      signal:`DI 1 STN_High/Low_CO_SW = 1 (Remote)\nDO ${m.rdDO} STN_NCC/BNCC ${m.rd} = ON`,
-      note:"ต้องยืนยันบทบาท RD เป็น Permissive หรือ Feedback คำสั่ง และรายละเอียด High/Low side"
-    },
-    {
-      title:"โรงไฟฟ้าตอบกลับ RD",
-      sub:`DI ${m.rdDI} ${m.rd} = 1`,
-      text:"โรงไฟฟ้าส่งสถานะตอบกลับ RD ไปยัง NCC",
-      signal:`DI ${m.rdDI} STN_NCC/BNCC_${m.rd} = 1`,
-      note:"RD Feedback ไม่ใช่สถานะยืนยันว่าเข้า Remote Control แล้ว"
-    },
-    {
-      title:`NCC ON ${m.control}`,
-      sub:`DO ${m.controlDO} = ON`,
-      text:`ส่งคำสั่งให้โรงไฟฟ้าเปลี่ยนเข้าสู่ NCC Remote ${m.name} Control`,
-      signal:`DO ${m.controlDO} PLC_SDCE-P ${m.control} = ON`,
-      note:mw
-        ? "ชื่อ DO 6005 ใช้ตาม Sequence แต่ต่างจากตาราง DO เดิม ต้องยืนยัน"
-        : mode === "MV"
-          ? "ใช้ Remote MVAR ตามหัวข้อและสัญญาณ; ข้อความ Remote KV ในต้นทางต้องตรวจแก้"
-          : "ต้องกำหนด Interlock กรณีมีโหมด Remote อื่นทำงานอยู่"
-    },
-    {
-      title:`เข้า Remote ${m.name}`,
-      sub:`DI ${m.controlDI} ${m.control} = 1`,
-      text:mw
-        ? "ปลดเฉพาะ Local MW และคงโหมด Local KV/MVAR/PF ที่กำลังใช้งาน"
-        : "ปลด Local KV/MVAR/PF ที่ใช้งานอยู่ และคง Local MW หาก ON",
-      signal:`DI ${m.controlDI} PLC_SDCE-P ${m.control} = 1\n${localOff}`,
-      note:"DI ต้องสะท้อนสถานะจริงหลังเปลี่ยนโหมด ไม่ใช่เพียง Echo คำสั่ง"
-    },
-    {
-      type:"decision",
-      title:"รับ Setpoint → ตรวจ Limit",
-      sub:`AO ${m.ao} | ${rangeText(mode)}`,
-      text:`รับ Setpoint จาก NCC และตรวจขอบเขต ${m.name} ก่อนนำค่าที่ยอมรับไปควบคุม`,
-      signal:`AO ${m.ao} SDCE-P PLC_SDCE-P ${m.sp} ${m.control}\n\n${limitSignals}`,
-      note:mode === "MV"
-        ? "MVAR Limit อิง MW PPA × tan(acos(0.90)); ไม่ใช่ Actual MW และต้องตรวจ Capability จริง"
-        : mode === "PF"
-          ? "การตรวจ PF เป็นขั้นตอนเชิงแนวคิด ต้องยืนยันช่วงที่อนุญาตก่อนพัฒนา Logic"
-          : "กรณีเกิน Limit ต้องกำหนด Reject, Clamp หรือ Hold แยกต่างหาก"
-    },
-    {
-      title:`ควบคุม ${m.name} + ส่ง Feedback`,
-      sub:`AI ${m.ai} ${m.sp} → NCC`,
-      text:"นำ Setpoint ที่ยอมรับไปควบคุมและส่ง Setpoint Feedback กลับ NCC เมื่อมีค่าใหม่ให้ตรวจ Limit อีกครั้ง",
-      signal:`AI ${m.ai} PLC_SDCE-P ${m.sp}\nSetpoint Feedback ของ AO ${m.ao}` +
-        (mode === "KV"
-          ? "\nเชื่อมโยงค่ากับ AI 1 STN_115KV SETTING ตามข้อกำหนด"
-          : ""),
-      note:"AI เป็นจุดรายงานค่า ต้องยืนยัน Feedback เป็นค่ารับเข้าหรือค่าที่ใช้หลังตรวจ Limit ไม่ใช่ Actual Process Value"
-    },
-    {
-      title:`NCC OFF ${m.control}`,
-      sub:`DO ${m.controlDO} = OFF`,
-      text:`NCC สั่งออกจาก Remote ${m.name} ก่อนปิด RD`,
-      signal:`DO ${m.controlDO} PLC_SDCE-P ${m.control} = OFF`,
-      note:"กรณี RD OFF ก่อนคำสั่งนี้ หรือการสื่อสารขัดข้อง ยังต้องกำหนด Logic เพิ่ม"
-    },
-    {
-      title:mw ? "กลับ Local MW" : "กลับ Local MVAR",
-      sub:`DI ${m.controlDI} ${m.control} = 0`,
-      text:mw
-        ? "กลับ Local MW โดยใช้ Actual MW ณ ขณะปลดเป็น Setpoint และคง Local โหมดอื่น"
-        : "กลับ Local MVAR และคง Local MW หาก ON อยู่",
-      signal:`DI ${m.controlDI} PLC_SDCE-P ${m.control} = 0\n${localOn}\n\n${localSP}`,
-      note:mode === "PF"
-        ? "ต้องระบุค่าเริ่มต้น Local MV Setpoint หลังออกจาก Remote PF"
-        : "กำหนดความหมายค่าปัจจุบัน การติดตามค่า และ Ramp เพื่อเปลี่ยนโหมดอย่างต่อเนื่อง"
-    },
-    {
-      title:`NCC OFF ${m.rd}`,
-      sub:`DO ${m.rdDO} = OFF`,
-      text:"เมื่อออกจาก Remote และกลับ Local แล้ว จึงสั่งปิด RD ตามลำดับ",
-      signal:`DO ${m.rdDO} STN_NCC/BNCC ${m.rd} = OFF`,
-      note:"คำสั่งปิด RD แยกจากคำสั่งออก Remote และมี Feedback คนละจุด"
-    },
-    {
-      type:mw ? "warning" : "terminal",
-      title:mw ? "MWRD Feedback — ต้องยืนยัน" : "RD Feedback = 0 / จบลำดับ",
-      sub:`DI ${m.rdDI} ${m.rd} = ${mw ? "1 ตามต้นทาง" : "0"}`,
-      text:mw
-        ? "ข้อมูลล่าสุดระบุ DI MWRD = 1 หลัง OFF DO 6006 จึงยังไม่ถือว่า RD ปิดสำเร็จ"
-        : "โรงไฟฟ้าตอบกลับ RD = 0 และคงทำงานใน Local ตามขั้นตอนก่อนหน้า",
-      signal:`DI ${m.rdDI} STN_NCC/BNCC_${m.rd} = ${mw ? "1 ตามข้อมูลล่าสุด\nข้อกำหนดยังต้องยืนยัน" : "0"}`,
-      note:mw
-        ? "ไม่แก้เป็น 0 เอง แม้โหมดอื่นใช้ 0 หลัง OFF ต้องยืนยันกับผู้ออกแบบ"
-        : "จบลำดับการปิด Remote และ RD ตามข้อมูลที่ให้มา"
-    }
-  ];
-}
-
-function arrow(label = "") {
-  const div = document.createElement("div");
-  div.className = "arrow";
-  if (label) {
-    const small = document.createElement("small");
-    small.textContent = label;
-    div.append(small);
-  }
-  const mark = document.createElement("span");
-  mark.textContent = "↓";
-  div.append(mark);
-  return div;
-}
-
-function renderFlow() {
-  sequence = buildSequence();
-  const m = modes[mode];
-
-  document.documentElement.style.setProperty("--accent",m.color);
-  $("flowTitle").textContent = `REMOTE ${m.name} CONTROL`;
-  $("flowSummary").textContent =
-    `${m.name}: RD ON → Remote ON → Setpoint / Limit → Control
-     → Remote OFF → Local → RD OFF`;
-
-  const container = $("flowNodes");
-  container.replaceChildren();
-
-  sequence.forEach((step,index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "node " + (step.type || "");
-    button.dataset.step = index;
-    button.setAttribute("aria-label",`ขั้นตอน ${index + 1}: ${step.title}`);
-
-    const heading = document.createElement("span");
-    heading.className = "node-heading";
-
-    const number = document.createElement("span");
-    number.className = "node-number";
-    number.textContent = index + 1;
-
-    heading.append(number,document.createTextNode(step.title));
-
-    const sub = document.createElement("span");
-    sub.className = "node-sub";
-    sub.textContent = step.sub;
-
-    button.append(heading,sub);
-    button.addEventListener("click",() => {
-      stopPlayback();
-      selectStep(index,false);
-    });
-    container.append(button);
-
-    if (index === 4) {
-      const branch = document.createElement("div");
-      branch.className = "branch";
-      branch.textContent =
-        "↳ ไม่ผ่าน / ข้อมูลไม่ครบ: ต้องกำหนดการจัดการเพิ่มเติม " +
-        "ไม่มีการนำค่าไปควบคุมในบทเรียนนี้";
-      container.append(branch);
-    }
-
-    if (index === 5) {
-      const loop = document.createElement("div");
-      loop.className = "loop-panel";
-      const text = document.createElement("div");
-      text.textContent =
-        "Remote ยัง ON → ควบคุมต่อ | เมื่อมี Setpoint ใหม่ ↺ กลับตรวจ Limit ขั้นตอน 5";
-      const back = document.createElement("button");
-      back.type = "button";
-      back.textContent = "↺ ดูขั้นตอนรับ Setpoint ใหม่";
-      back.addEventListener("click",() => {
-        stopPlayback();
-        selectStep(4,true);
-      });
-      loop.append(text,back);
-      container.append(loop);
-    }
-
-    if (index < sequence.length - 1) {
-      let label = "";
-      if (index === 4) label = "ค่าที่ผ่านเงื่อนไขและได้รับการยอมรับ";
-      if (index === 5) label = "เมื่อต้องการออกจาก Remote";
-      container.append(arrow(label));
-    }
-  });
-
-  selectStep(currentStep,false);
-}
-
-function selectStep(index,reveal) {
-  currentStep = index;
-  const step = sequence[index];
-
-  document.querySelectorAll(".node[data-step]").forEach(node => {
-    const selected = Number(node.dataset.step) === index;
-    node.classList.toggle("selected",selected);
-    node.setAttribute("aria-pressed",String(selected));
-    if (selected) node.setAttribute("aria-current","step");
-    else node.removeAttribute("aria-current");
-  });
-
-  $("stepCount").textContent =
-    `${modes[mode].name} • ขั้นตอน ${index + 1} / ${sequence.length}`;
-  $("detailTitle").textContent = step.title;
-  $("detailText").textContent = step.text;
-  $("detailSignal").textContent = step.signal;
-  $("detailNote").textContent = step.note;
-  $("progress").max = sequence.length;
-  $("progress").value = index + 1;
-  $("prev").disabled = index === 0;
-  $("next").disabled = index === sequence.length - 1;
-
-  if (reveal) {
-    const pane = $("flowPane");
-    const node = document.querySelector(`.node[data-step="${index}"]`);
-    const paneRect = pane.getBoundingClientRect();
-    const nodeRect = node.getBoundingClientRect();
-    const target = pane.scrollTop + nodeRect.top - paneRect.top
-      - pane.clientHeight / 2 + nodeRect.height / 2;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    pane.scrollTo({
-      top:Math.max(0,target),
-      behavior:reduced ? "auto" : "smooth"
-    });
-  }
-}
-
-function stopPlayback() {
-  if (timer !== null) clearInterval(timer);
-  timer = null;
-  $("play").textContent = "เล่นอัตโนมัติ";
-  $("play").setAttribute("aria-pressed","false");
-}
-
-function togglePlayback() {
-  if (timer !== null) {
-    stopPlayback();
-    return;
-  }
-  if (currentStep === sequence.length - 1) selectStep(0,true);
-
-  $("play").textContent = "หยุดอัตโนมัติ";
-  $("play").setAttribute("aria-pressed","true");
-
-  timer = setInterval(() => {
-    if (currentStep < sequence.length - 1) {
-      selectStep(currentStep + 1,true);
-    }
-    if (currentStep === sequence.length - 1) stopPlayback();
-  },3500);
-}
-
-function setSPResult(text,kind = "neutral") {
-  $("spResult").textContent = text;
-  $("spResult").className = "result " + kind;
-}
-
-function renderSP() {
-  $("spDescription").textContent =
-    `โหมด ${modes[mode].name} | ${rangeText(mode)}`;
-  $("spControls").hidden = mode === "PF";
-  setSPResult(
-    mode === "PF"
-      ? "ยังไม่ตรวจ PF อัตโนมัติ ต้องยืนยันเครื่องหมายและช่วงที่อนุญาตก่อน"
-      : "ยังไม่ได้ตรวจ หรือข้อมูลเปลี่ยน กรุณากดตรวจ Setpoint อีกครั้ง",
-    mode === "PF" ? "" : "neutral"
-  );
-}
-
-function renderIO() {
-  const m = modes[mode];
-  const rows = [
-    ["DI",1,"STN_High/Low_CO_SW","Remote = 1 / Local = 0"],
-    ["DO",m.rdDO,`STN_NCC/BNCC ${m.rd}`,"RD ON/OFF"],
-    ["DI",m.rdDI,`STN_NCC/BNCC_${m.rd}`,"RD Feedback"],
-    ["DO",m.controlDO,`PLC_SDCE-P ${m.control}`,
-      mode === "MW" ? "Remote ON/OFF; ชื่อเต็มต้องยืนยัน" : "Remote ON/OFF"],
-    ["DI",m.controlDI,`PLC_SDCE-P ${m.control}`,"Remote Status"],
-    ["AO",m.ao,`PLC_SDCE-P ${m.sp} ${m.control}`,"Setpoint จาก NCC"],
-    ["AI",m.ai,`PLC_SDCE-P ${m.sp}`,"Setpoint Feedback"]
-  ];
-
-  if (m.low) {
-    const range = limits(mode);
-    rows.push(
-      ["AI",m.lowAI,`PLC_SDCE-P ${m.low}`,
-        range ? `Low ${format(range[0])} ${m.unit}` : "Low: รอ MW PPA"],
-      ["AI",m.highAI,`PLC_SDCE-P ${m.high}`,
-        range ? `High ${format(range[1])} ${m.unit}` : "High: รอ MW PPA"]
-    );
-  }
-
-  if (mode === "KV") {
-    rows.push(["AI",1,"STN_115KV SETTING","Local 115 kV Setting"]);
-  }
-  table("ioTable",rows);
-}
-
-function renderLocal() {
-  const value = document.querySelector('input[name="local"]:checked').value;
-  $("localStatus").textContent =
-    "ตัวอย่างสถานะ Local\n" +
-    `STN_KV_MODE = ${Number(value === "KV")}\n` +
-    `STN_MV_MODE = ${Number(value === "MV")}\n` +
-    `STN_PF_MODE = ${Number(value === "PF")}\n` +
-    `STN_MW_MODE = ${Number($("localMW").checked)}`;
-}
-
-$("modeTabs").addEventListener("click",event => {
-  const button = event.target.closest("button[data-mode]");
-  if (!button) return;
-
-  stopPlayback();
-  mode = button.dataset.mode;
-  currentStep = 0;
-  $("sp").value = "";
-
-  document.querySelectorAll("[data-mode]").forEach(tab => {
-    const selected = tab.dataset.mode === mode;
-    tab.classList.toggle("active",selected);
-    tab.setAttribute("aria-pressed",String(selected));
-  });
-
-  renderFlow();
-  renderSP();
-  renderIO();
-  $("flowPane").scrollTop = 0;
-});
-
-$("ppa").addEventListener("input",() => {
-  stopPlayback();
-  renderLimits();
-  renderFlow();
-  renderSP();
-  renderIO();
-});
-
-$("prev").addEventListener("click",() => {
-  stopPlayback();
-  if (currentStep > 0) selectStep(currentStep - 1,true);
-});
-
-$("next").addEventListener("click",() => {
-  stopPlayback();
-  if (currentStep < sequence.length - 1) {
-    selectStep(currentStep + 1,true);
-  }
-});
-
-$("reset").addEventListener("click",() => {
-  stopPlayback();
-  selectStep(0,true);
-});
-
-$("play").addEventListener("click",togglePlayback);
-
-document.addEventListener("visibilitychange",() => {
-  if (document.hidden) stopPlayback();
-});
-
-$("localOptions").addEventListener("change",renderLocal);
-
-$("sp").addEventListener("input",() => {
-  setSPResult("มีการแก้ไขค่า กรุณากดตรวจ Setpoint อีกครั้ง");
-});
-
-$("checkSP").addEventListener("click",() => {
-  if (mode === "PF") return;
-
-  const range = limits(mode);
-  if (!range) {
-    setSPResult("กรุณากรอก MW PPA มากกว่า 0 ก่อน","");
-    return;
-  }
-
-  const raw = $("sp").value.trim();
-  const value = Number(raw);
-  if (!raw || !Number.isFinite(value)) {
-    setSPResult("กรุณากรอก Setpoint เป็นตัวเลขที่ถูกต้อง","");
-    return;
-  }
-
-  const [low,high] = range;
-  const unit = modes[mode].unit;
-  const valid = value >= low && value <= high;
-
-  setSPResult(
-    valid
-      ? `อยู่ในช่วง: ${format(low)} ≤ ${format(value)} ≤ ${format(high)} ${unit}
-         — ผลตรวจนี้ไม่ใช่การอนุญาตเดินเครื่อง`
-      : `อยู่นอกช่วง: ${format(value)} ${unit};
-         Limit ${format(low)} ถึง ${format(high)} ${unit}
-         — ไม่มีการปรับค่าหรือส่งคำสั่งอัตโนมัติ`,
-    valid ? "ok" : "error"
-  );
-});
-
-renderLimits();
-renderLocal();
-renderFlow();
-renderSP();
-renderIO();
-stopPlayback();
-</script>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+
+        <!-- SECTION 1: Plant Parameter & Automatic Limit Calculator -->
+        <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-xs font-mono font-bold uppercase bg-cyan-500/20 text-cyan-400 rounded border border-cyan-500/30">ส่วนที่ 1</span>
+                        <h2 class="text-base sm:text-lg font-bold text-white">ตั้งค่าพารามิเตอร์โรงไฟฟ้า และคำนวณย่านควบคุมอัตโนมัติ (Plant PPA & Dynamic Limit Calculator)</h2>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                        ปรับค่ากำลังผลิตตามสัญญา (PPA MW) หรือค่า Actual ปัจจุบัน เพื่อคำนวณกรอบ High/Low Limit สำหรับทุกโหมดแบบ Real-time
+                    </p>
+                </div>
+
+                <!-- PPA MW & Actual Inputs -->
+                <div class="flex flex-wrap items-center gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div>
+                        <label for="ppa-mw-input" class="block text-[11px] font-mono uppercase text-cyan-400 font-semibold">กำลังผลิตตามสัญญา (PPA MW)</label>
+                        <div class="mt-1 flex items-center gap-2">
+                            <input type="number" id="ppa-mw-input" value="90" min="1" max="2000" step="0.5"
+                                class="w-28 bg-slate-900 border border-cyan-500/50 focus:border-cyan-400 rounded-lg px-3 py-1.5 text-base font-mono font-bold text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                                oninput="updatePPACalculations()">
+                            <span class="text-sm font-mono font-bold text-slate-300">MW</span>
+                        </div>
+                    </div>
+
+                    <div class="h-10 w-px bg-slate-800 hidden sm:block"></div>
+
+                    <div>
+                        <label for="actual-mv-input" class="block text-[11px] font-mono uppercase text-amber-400 font-semibold" title="ค่า MVAR ปัจจุบันที่ใช้เป็นค่าเริ่มต้นเมื่อปลดกลับสู่ Local MV_MODE">Local/Actual MVAR ปัจจุบัน</label>
+                        <div class="mt-1 flex items-center gap-2">
+                            <input type="number" id="actual-mv-input" value="12.50" step="0.5"
+                                class="w-24 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-sm font-mono font-bold text-amber-300 focus:outline-none"
+                                oninput="updateActualValues()">
+                            <span class="text-xs font-mono text-slate-400">MVAR</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="actual-mw-input" class="block text-[11px] font-mono uppercase text-emerald-400 font-semibold" title="ค่า Actual MW ณ ตอนปลดโหมด AGC เพื่อนำมาเป็น Local MW Setpoint">Actual MW ปัจจุบัน</label>
+                        <div class="mt-1 flex items-center gap-2">
+                            <input type="number" id="actual-mw-input" value="75.00" step="0.5"
+                                class="w-24 bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1.5 text-sm font-mono font-bold text-emerald-300 focus:outline-none"
+                                oninput="updateActualValues()">
+                            <span class="text-xs font-mono text-slate-400">MW</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 Calculated Limit Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+                <!-- 1. KV Limit Card -->
+                <div class="bg-slate-950/90 border border-cyan-500/30 rounded-xl p-4 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">1. KV Control Limits</span>
+                        <span class="px-2 py-0.5 text-[11px] font-mono bg-cyan-500/10 text-cyan-300 rounded border border-cyan-500/20">115 kV &pm; 5%</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mb-3">ย่านควบคุมแรงดันไฟฟ้าด้าน 115 kV (&pm;5.75 kV)</p>
+                    <div class="space-y-2 text-xs font-mono">
+                        <div class="flex justify-between items-center bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400" title="115 KV LOW LIMIT KV">AI PLC_SDCE-P LKV (Low):</span>
+                            <span id="calc-lkv" class="font-bold text-cyan-300 text-sm">109.25 kV</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400" title="115 KV HIGH LIMIT KV">AI PLC_SDCE-P HKV (High):</span>
+                            <span id="calc-hkv" class="font-bold text-cyan-400 text-sm">120.75 kV</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. MVAR Limit Card -->
+                <div class="bg-slate-950/90 border border-emerald-500/30 rounded-xl p-4 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">2. MVAR Limits @ 0.90 PF</span>
+                        <span class="px-2 py-0.5 text-[11px] font-mono bg-emerald-500/10 text-emerald-300 rounded border border-emerald-500/20">PPA &times; 0.4843</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mb-3">คำนวณจาก $\text{PPA MW} \times \tan(\arccos(0.90))$</p>
+                    <div class="space-y-2 text-xs font-mono">
+                        <div class="flex justify-between items-center bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400" title="LOW LIMIT MVAR (Leading)">AI PLC_SDCE-P LMV (Low):</span>
+                            <span id="calc-lmv" class="font-bold text-amber-400 text-sm">-43.59 MVAR</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400" title="HIGH LIMIT MVAR (Lagging)">AI PLC_SDCE-P HMV (High):</span>
+                            <span id="calc-hmv" class="font-bold text-emerald-400 text-sm">+43.59 MVAR</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. PF Limit Card -->
+                <div class="bg-slate-950/90 border border-purple-500/30 rounded-xl p-4 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-mono font-bold text-purple-400 uppercase tracking-wider">3. PF Control Limits</span>
+                        <span class="px-2 py-0.5 text-[11px] font-mono bg-purple-500/10 text-purple-300 rounded border border-purple-500/20">Internal Limit</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mb-3">ตั้งค่าจำกัดย่านภายในโรงไฟฟ้า (&pm;0.90 PF)</p>
+                    <div class="space-y-2 text-xs font-mono">
+                        <div class="flex justify-between items-center bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400">Limit Low PF (Leading):</span>
+                            <span id="calc-lpf" class="font-bold text-purple-300 text-sm">-0.90 PF</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400">Limit High PF (Lagging):</span>
+                            <span id="calc-hpf" class="font-bold text-purple-400 text-sm">+0.90 PF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. MW Limit Card -->
+                <div class="bg-slate-950/90 border border-amber-500/30 rounded-xl p-4 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">4. MW Control Limits</span>
+                        <span class="px-2 py-0.5 text-[11px] font-mono bg-amber-500/10 text-amber-300 rounded border border-amber-500/20">0 &rarr; PPA MW</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mb-3">ย่านควบคุมกำลังไฟฟ้าจริงตามสัญญา PPA</p>
+                    <div class="space-y-2 text-xs font-mono">
+                        <div class="flex justify-between items-center bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400" title="LOW LIMIT MW">AI PLC_SDCE-P LMW (Low):</span>
+                            <span id="calc-lmw" class="font-bold text-amber-300 text-sm">0.00 MW</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400" title="HIGH LIMIT MW">AI PLC_SDCE-P HMW (High):</span>
+                            <span id="calc-hmw" class="font-bold text-amber-400 text-sm">90.00 MW</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Master Cut-Off Switch & Plant Local Modes Interlock Panel -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left: Master Cut-off Switch -->
+            <div class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="px-2 py-0.5 text-xs font-mono font-bold uppercase bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30">ส่วนที่ 2.1</span>
+                        <span class="text-xs font-mono text-slate-400">High Side / Low Side Control</span>
+                    </div>
+                    <h3 class="text-base font-bold text-white">สวิตช์ตัดตอนการควบคุมหลัก (Master Cut-Off Switch)</h3>
+                    <p class="text-xs text-slate-400 mt-1">
+                        สัญญาณ <code class="text-cyan-300 font-mono">DI STN_High/Low_CO_SW</code> ใช้สำหรับ KV, MVAR, MW และ PF Mode Cut-off Switch (Remote = 1, Local = 0)
+                    </p>
+                </div>
+
+                <div class="my-4 bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div id="co-sw-led" class="w-4 h-4 rounded-full led-on-green"></div>
+                        <div>
+                            <div class="text-sm font-mono font-bold text-white">DI STN_High/Low_CO_SW</div>
+                            <div id="co-sw-desc" class="text-xs text-emerald-400 font-medium">สถานะ: 1 (REMOTE ENABLED - อนุญาตให้ NCC สั่งการ)</div>
+                        </div>
+                    </div>
+
+                    <button id="co-sw-btn" onclick="toggleCutOffSwitch()"
+                        class="px-4 py-2 rounded-xl font-mono text-xs font-bold transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 border border-emerald-400/40">
+                        REMOTE = 1
+                    </button>
+                </div>
+
+                <div class="text-[11px] text-slate-400 bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/80 flex items-start gap-2">
+                    <svg class="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>หากสวิตช์อยู่ที่ <b>Local = 0</b> ศูนย์ควบคุม NCC จะไม่สามารถโยกเข้าโหมด Remote (AGVC, VAGC, RPFC, AGC) ได้ และโรงไฟฟ้าจะควบคุมในโหมด Local เท่านั้น</span>
+                </div>
+            </div>
+
+            <!-- Right: Local Mode Status & Mutual Exclusion Interlock -->
+            <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="px-2 py-0.5 text-xs font-mono font-bold uppercase bg-amber-500/20 text-amber-400 rounded border border-amber-500/30">ส่วนที่ 2.2</span>
+                        <span class="text-xs font-mono text-slate-400">Plant Local Control Status & Interlock</span>
+                    </div>
+                    <h3 class="text-base font-bold text-white">สถานะโหมดควบคุม Local ของโรงไฟฟ้า (Local Mode Interlock)</h3>
+                    <p class="text-xs text-slate-400 mt-1">
+                        โหมด <span class="text-cyan-300 font-semibold">KV, MVAR หรือ PF จะไม่สามารถ On พร้อมกันได้</span> (Exclusive OR) และจะถูกปลดออกเมื่อ NCC สั่ง Remote V/Q ส่วน <span class="text-emerald-300 font-semibold">MW Mode สามารถ On ร่วมกับทุกโหมดได้</span>
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 my-4">
+                    <!-- Local KV Mode -->
+                    <button onclick="selectLocalVQMode('KV')" id="btn-local-kv"
+                        class="p-3 rounded-xl border text-left transition-all flex flex-col justify-between bg-slate-950 border-slate-800 hover:border-slate-700">
+                        <div class="flex items-center justify-between w-full mb-2">
+                            <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">V/Q Group</span>
+                            <span id="led-local-kv" class="w-3 h-3 rounded-full led-off"></span>
+                        </div>
+                        <div class="font-mono text-xs font-bold text-white">DI STN_KV_MODE</div>
+                        <div id="status-local-kv" class="text-[11px] font-mono text-slate-500 mt-1">STATUS: 0 (OFF)</div>
+                    </button>
+
+                    <!-- Local MV Mode -->
+                    <button onclick="selectLocalVQMode('MV')" id="btn-local-mv"
+                        class="p-3 rounded-xl border text-left transition-all flex flex-col justify-between bg-slate-950 border-amber-500/50 shadow-lg shadow-amber-500/5">
+                        <div class="flex items-center justify-between w-full mb-2">
+                            <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Default Fallback</span>
+                            <span id="led-local-mv" class="w-3 h-3 rounded-full led-on-amber"></span>
+                        </div>
+                        <div class="font-mono text-xs font-bold text-white">DI STN_MV_MODE</div>
+                        <div id="status-local-mv" class="text-[11px] font-mono text-amber-400 mt-1">STATUS: 1 (ON)</div>
+                    </button>
+
+                    <!-- Local PF Mode -->
+                    <button onclick="selectLocalVQMode('PF')" id="btn-local-pf"
+                        class="p-3 rounded-xl border text-left transition-all flex flex-col justify-between bg-slate-950 border-slate-800 hover:border-slate-700">
+                        <div class="flex items-center justify-between w-full mb-2">
+                            <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">V/Q Group</span>
+                            <span id="led-local-pf" class="w-3 h-3 rounded-full led-off"></span>
+                        </div>
+                        <div class="font-mono text-xs font-bold text-white">DI STN_PF_MODE</div>
+                        <div id="status-local-pf" class="text-[11px] font-mono text-slate-500 mt-1">STATUS: 0 (OFF)</div>
+                    </button>
+
+                    <!-- Local MW Mode (Independent) -->
+                    <button onclick="toggleLocalMWMode()" id="btn-local-mw"
+                        class="p-3 rounded-xl border text-left transition-all flex flex-col justify-between bg-slate-950 border-emerald-500/50 shadow-lg shadow-emerald-500/5">
+                        <div class="flex items-center justify-between w-full mb-2">
+                            <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Independent</span>
+                            <span id="led-local-mw" class="w-3 h-3 rounded-full led-on-green"></span>
+                        </div>
+                        <div class="font-mono text-xs font-bold text-white">DI STN_MW_MODE</div>
+                        <div id="status-local-mw" class="text-[11px] font-mono text-emerald-400 mt-1">STATUS: 1 (ON)</div>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/80">
+                    <span>คลิกที่การ์ดด้านบนเพื่อจำลองการเปลี่ยนโหมด Local ของโรงไฟฟ้าก่อนเริ่มทดสอบ Remote Sequence</span>
+                    <span id="local-sp-summary" class="font-mono text-amber-300">Local MV SP = 12.50 MVAR | Local MW SP = 75.00 MW</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Mode Selector Tabs & Interactive Flowchart + SCADA Simulator -->
+        <section class="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Mode Tabs Header -->
+            <div class="bg-slate-950 px-5 pt-5 border-b border-slate-800">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 text-xs font-mono font-bold uppercase bg-cyan-500/20 text-cyan-400 rounded border border-cyan-500/30">ส่วนที่ 3</span>
+                            <h2 class="text-base sm:text-lg font-bold text-white">Interactive Flowchart & SCADA Sequence Simulator (คลิกเปลี่ยนโหมดเพื่อสลับ Flow ทันที)</h2>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">เลือกโหมดด้านล่างเพื่อดูแผนผัง Flowchart เฉพาะของโหมดนั้น พร้อมกดปุ่มจำลองการทำงานทีละขั้นตอน (Step 1 &rarr; Step 5)</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="resetCurrentModeSequence()"
+                            class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            รีเซ็ตลำดับขั้น (Reset Flow)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 Mode Selector Buttons -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 pb-4">
+                    <button onclick="switchModeTab('KV')" id="tab-btn-KV"
+                        class="mode-tab-btn p-3.5 rounded-xl border text-left transition-all bg-cyan-500/15 border-cyan-400 text-white shadow-lg shadow-cyan-500/10">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-cyan-400">MODE 1 : AGVC</span>
+                            <span id="tab-badge-KV" class="px-2 py-0.5 text-[10px] font-mono rounded bg-cyan-500/20 text-cyan-300">กำลังแสดง Flow</span>
+                        </div>
+                        <div class="text-sm font-bold mt-1">Remote KV Control</div>
+                        <div class="text-[11px] font-mono text-slate-400 mt-0.5">DO 6003 / DO 6001 / AO 9001</div>
+                    </button>
+
+                    <button onclick="switchModeTab('MVAR')" id="tab-btn-MVAR"
+                        class="mode-tab-btn p-3.5 rounded-xl border text-left transition-all bg-slate-900/90 border-slate-800 hover:border-slate-700 text-slate-300">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-emerald-400">MODE 2 : VAGC</span>
+                            <span id="tab-badge-MVAR" class="px-2 py-0.5 text-[10px] font-mono rounded bg-slate-800 text-slate-400">คลิกเพื่อดู Flow</span>
+                        </div>
+                        <div class="text-sm font-bold mt-1">Remote MVAR Control</div>
+                        <div class="text-[11px] font-mono text-slate-400 mt-0.5">DO 6004 / DO 6002 / AO 9002</div>
+                    </button>
+
+                    <button onclick="switchModeTab('PF')" id="tab-btn-PF"
+                        class="mode-tab-btn p-3.5 rounded-xl border text-left transition-all bg-slate-900/90 border-slate-800 hover:border-slate-700 text-slate-300">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-purple-400">MODE 3 : RPFC</span>
+                            <span id="tab-badge-PF" class="px-2 py-0.5 text-[10px] font-mono rounded bg-slate-800 text-slate-400">คลิกเพื่อดู Flow</span>
+                        </div>
+                        <div class="text-sm font-bold mt-1">Remote PF Control</div>
+                        <div class="text-[11px] font-mono text-slate-400 mt-0.5">DO 6009 / DO 6008 / AO 9004</div>
+                    </button>
+
+                    <button onclick="switchModeTab('MW')" id="tab-btn-MW"
+                        class="mode-tab-btn p-3.5 rounded-xl border text-left transition-all bg-slate-900/90 border-slate-800 hover:border-slate-700 text-slate-300">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-amber-400">MODE 4 : AGC</span>
+                            <span id="tab-badge-MW" class="px-2 py-0.5 text-[10px] font-mono rounded bg-slate-800 text-slate-400">คลิกเพื่อดู Flow</span>
+                        </div>
+                        <div class="text-sm font-bold mt-1">Remote MW Control</div>
+                        <div class="text-[11px] font-mono text-slate-400 mt-0.5">DO 6006 / DO 6005 / AO 9003</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Interactive Content: Left = Visual Flowchart, Right = Live SCADA I/O & Setpoint Control -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-5">
+                
+                <!-- LEFT COLUMN (7 Cols): Dynamic Interactive Flowchart -->
+                <div class="lg:col-span-7 flex flex-col justify-between bg-slate-950/70 border border-slate-800/90 rounded-2xl p-4 sm:p-5">
+                    <div>
+                        <!-- Flowchart Title & Step Progress -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-4 border-b border-slate-800">
+                            <div>
+                                <span id="flow-subtitle" class="text-xs font-mono uppercase font-bold text-cyan-400">FLOWCHART SEQUENCE : AGVC</span>
+                                <h3 id="flow-title" class="text-lg font-bold text-white">ลำดับการทำงานโหมด Remote KV Control (AGVC)</h3>
+                            </div>
+                            <div class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+                                <span class="text-xs text-slate-400">สถานะปัจจุบัน:</span>
+                                <span id="flow-current-step-badge" class="text-xs font-mono font-bold text-cyan-400">รอคำสั่งเริ่มต้น (IDLE)</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Step Execution Bar -->
+                        <div class="mb-5 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                            <div class="text-[11px] font-mono text-slate-400 mb-2 flex items-center justify-between">
+                                <span>กดปุ่มด้านล่างเพื่อจำลองการทำงานทีละขั้นตอน (หรือคลิกที่กล่อง Flowchart โดยตรง):</span>
+                                <span class="text-cyan-400 font-semibold">คลิกเรียงตามลำดับ 1 &rarr; 5</span>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                <button onclick="executeFlowStep(1)" id="step-btn-1"
+                                    class="px-2.5 py-2 rounded-lg font-mono text-xs font-bold bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-200 border border-slate-700 transition">
+                                    ขั้นที่ 1: ON Ready
+                                </button>
+                                <button onclick="executeFlowStep(2)" id="step-btn-2"
+                                    class="px-2.5 py-2 rounded-lg font-mono text-xs font-bold bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-200 border border-slate-700 transition">
+                                    ขั้นที่ 2: ON Mode
+                                </button>
+                                <button onclick="executeFlowStep(3)" id="step-btn-3"
+                                    class="px-2.5 py-2 rounded-lg font-mono text-xs font-bold bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-200 border border-slate-700 transition">
+                                    ขั้นที่ 3: ส่ง Setpoint
+                                </button>
+                                <button onclick="executeFlowStep(4)" id="step-btn-4"
+                                    class="px-2.5 py-2 rounded-lg font-mono text-xs font-bold bg-slate-800 hover:bg-amber-600 hover:text-white text-slate-200 border border-slate-700 transition">
+                                    ขั้นที่ 4: OFF Mode
+                                </button>
+                                <button onclick="executeFlowStep(5)" id="step-btn-5"
+                                    class="px-2.5 py-2 rounded-lg font-mono text-xs font-bold bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-200 border border-slate-700 transition col-span-2 sm:col-span-1">
+                                    ขั้นที่ 5: OFF Ready
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Flowchart Nodes Container -->
+                        <div id="flowchart-nodes-container" class="space-y-0">
+                            <!-- Populated dynamically via JS when mode changes or step updates -->
+                        </div>
+                    </div>
+
+                    <!-- Alert / Sequence Notification Banner -->
+                    <div id="sequence-log-banner" class="mt-5 p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 mt-1.5 shrink-0"></div>
+                        <div class="text-xs text-slate-300 leading-relaxed" id="sequence-log-text">
+                            เลือกกด <b>"ขั้นที่ 1: ON Ready"</b> เพื่อเริ่มจำลองการส่งสัญญาณจากศูนย์ควบคุม NCC ไปยังโรงไฟฟ้า PLC_SDCE-P
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN (5 Cols): SCADA Telemetry, I/O Status & Setpoint Limiter -->
+                <div class="lg:col-span-5 flex flex-col justify-between space-y-5">
+                    
+                    <!-- Card 1: Digital Output (NCC -> Plant) & Digital Input (Plant -> NCC) -->
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+                            <div>
+                                <span class="text-[11px] font-mono uppercase text-cyan-400 font-bold">Digital I/O Signals</span>
+                                <h4 class="text-sm font-bold text-white">สถานะสัญญาณ DO (NCC) และ DI (Feedback โรงไฟฟ้า)</h4>
+                            </div>
+                            <span id="io-mode-tag" class="px-2 py-0.5 text-xs font-mono font-bold bg-cyan-500/10 text-cyan-300 rounded border border-cyan-500/30">AGVC</span>
+                        </div>
+
+                        <div class="space-y-3">
+                            <!-- Ready Signal Pair -->
+                            <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800/90">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-semibold text-slate-300">1. สัญญาณเตรียมพร้อม (Ready Command & Feedback)</span>
+                                    <button onclick="toggleReadySignal()" id="btn-toggle-ready"
+                                        class="px-2.5 py-1 rounded text-[11px] font-mono font-bold bg-slate-800 hover:bg-cyan-600 text-slate-300 hover:text-white border border-slate-700 transition">
+                                        สั่ง ON Ready
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                                    <div class="flex items-center justify-between bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
+                                        <div>
+                                            <div class="text-[10px] text-slate-500">NCC COMMAND (DO)</div>
+                                            <div id="scada-do-ready-name" class="text-slate-200 font-semibold">DO 6003 KVRD</div>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span id="scada-do-ready-val" class="font-bold text-slate-400">0</span>
+                                            <span id="scada-do-ready-led" class="w-3 h-3 rounded-full led-off"></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
+                                        <div>
+                                            <div class="text-[10px] text-slate-500">PLANT FEEDBACK (DI)</div>
+                                            <div id="scada-di-ready-name" class="text-slate-200 font-semibold">DI STN_NCC/BNCC_KVRD</div>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span id="scada-di-ready-val" class="font-bold text-slate-400">0</span>
+                                            <span id="scada-di-ready-led" class="w-3 h-3 rounded-full led-off"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mode Active Signal Pair -->
+                            <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800/90">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-semibold text-slate-300">2. สัญญาณโยกเข้าโหมดควบคุม (Mode Select & Interlock)</span>
+                                    <button onclick="toggleActiveSignal()" id="btn-toggle-active"
+                                        class="px-2.5 py-1 rounded text-[11px] font-mono font-bold bg-slate-800 hover:bg-cyan-600 text-slate-300 hover:text-white border border-slate-700 transition">
+                                        สั่ง ON Mode
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                                    <div class="flex items-center justify-between bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
+                                        <div>
+                                            <div class="text-[10px] text-slate-500">NCC COMMAND (DO)</div>
+                                            <div id="scada-do-active-name" class="text-slate-200 font-semibold">DO 6001 AGVC</div>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span id="scada-do-active-val" class="font-bold text-slate-400">0</span>
+                                            <span id="scada-do-active-led" class="w-3 h-3 rounded-full led-off"></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
+                                        <div>
+                                            <div class="text-[10px] text-slate-500">PLANT FEEDBACK (DI)</div>
+                                            <div id="scada-di-active-name" class="text-slate-200 font-semibold">DI PLC_SDCE-P AGVC</div>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span id="scada-di-active-val" class="font-bold text-slate-400">0</span>
+                                            <span id="scada-di-active-led" class="w-3 h-3 rounded-full led-off"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Analog Output Setpoint & Limit Clamping Simulator -->
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+                            <div>
+                                <span class="text-[11px] font-mono uppercase text-emerald-400 font-bold">Analog Setpoint & Limit Clamping</span>
+                                <h4 class="text-sm font-bold text-white">จำลองการส่งค่า Setpoint (AO) และตรวจสอบย่านควบคุม (AI)</h4>
+                            </div>
+                        </div>
+
+                        <!-- Setpoint Slider & Input -->
+                        <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label for="sp-number-input" class="text-xs font-mono text-slate-300" id="sp-ao-label">
+                                    AO 9001 SDCE-P PLC_SDCE-P SPKV AGVC
+                                </label>
+                                <span id="sp-limit-status-badge" class="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    WITHIN LIMIT (ปกติ)
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <input type="range" id="sp-slider" min="105" max="125" step="0.05" value="115.00"
+                                    class="w-full accent-cyan-500 cursor-pointer"
+                                    oninput="handleSetpointChange(this.value)">
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <input type="number" id="sp-number-input" value="115.00" step="0.1"
+                                        class="w-24 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-sm font-mono font-bold text-white text-right focus:outline-none focus:border-cyan-400"
+                                        oninput="handleSetpointChange(this.value)">
+                                    <span id="sp-unit-label" class="text-xs font-mono font-bold text-cyan-400 w-10">kV</span>
+                                </div>
+                            </div>
+
+                            <!-- Visual Limit Bar with Low/High Markers -->
+                            <div class="space-y-1 pt-1">
+                                <div class="flex justify-between text-[11px] font-mono">
+                                    <span id="sp-low-limit-label" class="text-amber-400">Low Limit: 109.25 kV</span>
+                                    <span id="sp-high-limit-label" class="text-emerald-400">High Limit: 120.75 kV</span>
+                                </div>
+                                <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800 relative">
+                                    <div id="sp-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-150" style="width: 50%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Telemetry Readouts: Sent AO vs Plant Clamped Setting vs Feedback AI -->
+                        <div class="mt-3 space-y-2 font-mono text-xs">
+                            <div class="flex items-center justify-between bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-800">
+                                <span class="text-slate-400">1. ค่าที่ NCC ส่งออก (Raw AO):</span>
+                                <span id="readout-raw-ao" class="font-bold text-white">115.00 kV</span>
+                            </div>
+                            <div id="plant-internal-target-row" class="flex items-center justify-between bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-800">
+                                <span class="text-slate-400" id="readout-target-name">2. AI SDCE-P STN_115KV SETTING:</span>
+                                <span id="readout-clamped-target" class="font-bold text-cyan-300">115.00 kV</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-slate-900/80 px-3 py-2 rounded-lg border border-cyan-500/30">
+                                <span class="text-slate-300" id="readout-fb-name">3. AI PLC_SDCE-P SPKV (Feedback 9001):</span>
+                                <span id="readout-fb-ai" class="font-bold text-emerald-400 text-sm">115.00 kV</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Fallback Behavior Summary Box -->
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
+                        <div class="text-xs font-mono font-bold text-amber-400 uppercase mb-1">เงื่อนไขเมื่อปลดโหมด (Fallback Logic upon OFF)</div>
+                        <p id="fallback-desc-box" class="text-xs text-slate-300 leading-relaxed">
+                            เมื่อ NCC สั่ง <b>OFF DO 6001 (AGVC)</b> โรงไฟฟ้าจะส่ง <b>DI PLC_SDCE-P AGVC = 0</b> และสลับกลับไปยังโหมด <b>STN_MV_MODE (Local MVAR Control)</b> ทันที โดยดึงค่า Local Setpoint MV จากค่าปัจจุบันมาควบคุม และคงโหมด MW Local ไว้หาก On อยู่
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: Comprehensive Engineering I/O & Logic Comparison Table -->
+        <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-xs font-mono font-bold uppercase bg-purple-500/20 text-purple-400 rounded border border-purple-500/30">ส่วนที่ 4</span>
+                        <h2 class="text-base sm:text-lg font-bold text-white">ตารางสรุปสัญญาณ I/O, ย่านควบคุม (Control Limits) และเงื่อนไขการสลับโหมดทั้ง 4 โหมด</h2>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">ตารางอ้างอิงทางวิศวกรรมสำหรับตรวจสอบหมายเลขจุดสัญญาณ DO, DI, AO, AI และลอจิกการทำงานของ PLC_SDCE-P</p>
+                </div>
+                <span class="text-xs font-mono text-cyan-400 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                    คลิกแถวใดก็ได้เพื่อสลับไปดู Flowchart ของโหมดนั้น
+                </span>
+            </div>
+
+            <div class="overflow-x-auto mt-4">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-950 text-slate-300 font-mono uppercase border-b border-slate-800">
+                            <th class="py-3.5 px-3">โหมดควบคุม (Mode)</th>
+                            <th class="py-3.5 px-3">ขั้นที่ 1: Ready (DO &rarr; DI)</th>
+                            <th class="py-3.5 px-3">ขั้นที่ 2: Mode On &amp; Interlock</th>
+                            <th class="py-3.5 px-3">ขั้นที่ 3: Setpoint (AO &rarr; AI Feedback)</th>
+                            <th class="py-3.5 px-3">ย่านจำกัด (Low / High Limits)</th>
+                            <th class="py-3.5 px-3">ขั้นที่ 4-5: ปลดโหมด (Fallback Mode)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/80 font-mono">
+                        <!-- Row 1: KV -->
+                        <tr onclick="switchModeTab('KV')" class="hover:bg-cyan-500/5 cursor-pointer transition">
+                            <td class="py-3.5 px-3 font-sans">
+                                <div class="font-bold text-cyan-400">1. Remote KV (AGVC)</div>
+                                <div class="text-[11px] text-slate-400">ควบคุมแรงดัน 115 kV</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-white">DO 6003 <span class="text-slate-400">(STN_NCC/BNCC KVRD)</span></div>
+                                <div class="text-emerald-400">&rarr; DI STN_NCC/BNCC_KVRD = 1</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-white">DO 6001 <span class="text-slate-400">(PLC_SDCE-P AGVC)</span></div>
+                                <div class="text-emerald-400">&rarr; DI PLC_SDCE-P AGVC = 1</div>
+                                <div class="font-sans text-[11px] text-amber-300 mt-0.5">ปลด Local KV/MV/PF (ยกเว้น MW)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-cyan-300">AO 9001 <span class="text-slate-400">(SPKV AGVC)</span></div>
+                                <div class="text-slate-300">&rarr; AI SDCE-P STN_115KV SETTING</div>
+                                <div class="text-emerald-300">&rarr; AI PLC_SDCE-P SPKV (9001)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-slate-300">LKV: <span id="tbl-lkv" class="text-cyan-300 font-bold">109.25 kV</span> (-5%)</div>
+                                <div class="text-slate-300">HKV: <span id="tbl-hkv" class="text-cyan-400 font-bold">120.75 kV</span> (+5%)</div>
+                            </td>
+                            <td class="py-3.5 px-3 font-sans">
+                                <div class="text-amber-300 font-semibold">กลับสู่ STN_MV_MODE (Local MV)</div>
+                                <div class="text-[11px] text-slate-400">ใช้ค่า Local SP MV ปัจจุบัน + คงโหมด MW Local (ถ้า On อยู่) | OFF DO 6003 &rarr; DI KVRD = 0</div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 2: MVAR -->
+                        <tr onclick="switchModeTab('MVAR')" class="hover:bg-emerald-500/5 cursor-pointer transition">
+                            <td class="py-3.5 px-3 font-sans">
+                                <div class="font-bold text-emerald-400">2. Remote MVAR (VAGC)</div>
+                                <div class="text-[11px] text-slate-400">ควบคุมกำลังไฟฟ้ารีแอกทีฟ</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-white">DO 6004 <span class="text-slate-400">(STN_NCC/BNCC MVRD)</span></div>
+                                <div class="text-emerald-400">&rarr; DI STN_NCC/BNCC_MVRD = 1</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-white">DO 6002 <span class="text-slate-400">(PLC_SDCE-P VAGC)</span></div>
+                                <div class="text-emerald-400">&rarr; DI PLC_SDCE-P VAGC = 1</div>
+                                <div class="font-sans text-[11px] text-amber-300 mt-0.5">ปลด Local KV/MV/PF (ยกเว้น MW)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-cyan-300">AO 9002 <span class="text-slate-400">(SPMV VAGC)</span></div>
+                                <div class="text-emerald-300">&rarr; AI PLC_SDCE-P SPMV (9002)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-slate-300">LMV: <span id="tbl-lmv" class="text-amber-400 font-bold">-43.59 MVAR</span></div>
+                                <div class="text-slate-300">HMV: <span id="tbl-hmv" class="text-emerald-400 font-bold">+43.59 MVAR</span></div>
+                                <div class="text-[10px] text-slate-400">@ 0.90 PF ของ PPA MW</div>
+                            </td>
+                            <td class="py-3.5 px-3 font-sans">
+                                <div class="text-amber-300 font-semibold">กลับสู่ STN_MV_MODE (Local MV)</div>
+                                <div class="text-[11px] text-slate-400">ใช้ค่า Local SP MV ปัจจุบัน + คงโหมด MW Local (ถ้า On อยู่) | OFF DO 6004 &rarr; DI MVRD = 0</div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 3: PF -->
+                        <tr onclick="switchModeTab('PF')" class="hover:bg-purple-500/5 cursor-pointer transition">
+                            <td class="py-3.5 px-3 font-sans">
+                                <div class="font-bold text-purple-400">3. Remote PF (RPFC)</div>
+                                <div class="text-[11px] text-slate-400">ควบคุมตัวประกอบกำลังไฟฟ้า</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-white">DO 6009 <span class="text-slate-400">(STN_NCC/BNCC PFRD)</span></div>
+                                <div class="text-emerald-400">&rarr; DI STN_NCC/BNCC_PFRD = 1</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-white">DO 6008 <span class="text-slate-400">(PLC_SDCE-P RPFC)</span></div>
+                                <div class="text-emerald-400">&rarr; DI PLC_SDCE-P RPFC = 1</div>
+                                <div class="font-sans text-[11px] text-amber-300 mt-0.5">ปลด Local KV/MV/PF (ยกเว้น MW)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-cyan-300">AO 9004 <span class="text-slate-400">(SPPF RPFC)</span></div>
+                                <div class="text-emerald-300">&rarr; AI PLC_SDCE-P SPPF (9004)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-slate-300">Low PF: <span class="text-purple-300 font-bold">-0.90 PF</span></div>
+                                <div class="text-slate-300">High PF: <span class="text-purple-400 font-bold">+0.90 PF</span></div>
+                                <div class="text-[10px] text-slate-400">(Internal Plant Limit)</div>
+                            </td>
+                            <td class="py-3.5 px-3 font-sans">
+                                <div class="text-amber-300 font-semibold">กลับสู่ STN_MV_MODE (Local MV)</div>
+                                <div class="text-[11px] text-slate-400">ควบคู่โหมด MW Local (ถ้า On อยู่) | OFF DO 6009 &rarr; DI PFRD = 0</div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 4: MW -->
+                        <tr onclick="switchModeTab('MW')" class="hover:bg-amber-500/5 cursor-pointer transition">
+                            <td class="py-3.5 px-3 font-sans">
+                                <div class="font-bold text-amber-400">4. Remote MW (AGC)</div>
+                                <div class="text-[11px] text-slate-400">ควบคุมกำลังไฟฟ้าจริง (MW)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-white">DO 6006 <span class="text-slate-400">(STN_NCC/BNCC MWRD)</span></div>
+                                <div class="text-emerald-400">&rarr; DI STN_NCC/BNCC_MWRD = 1</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-white">DO 6005 <span class="text-slate-400">(PLC_SDCE-P AGC)</span></div>
+                                <div class="text-emerald-400">&rarr; DI PLC_SDCE-P AGC = 1</div>
+                                <div class="font-sans text-[11px] text-emerald-300 mt-0.5">ปลดเฉพาะ Local MW (โหมดอื่นคงเดิม)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-cyan-300">AO 9003 <span class="text-slate-400">(SPMW AGC)</span></div>
+                                <div class="text-emerald-300">&rarr; AI PLC_SDCE-P SPMW (9003)</div>
+                            </td>
+                            <td class="py-3.5 px-3">
+                                <div class="text-slate-300">LMW: <span class="text-amber-300 font-bold">0.00 MW</span></div>
+                                <div class="text-slate-300">HMW: <span id="tbl-hmw" class="text-amber-400 font-bold">90.00 MW</span> (PPA)</div>
+                            </td>
+                            <td class="py-3.5 px-3 font-sans">
+                                <div class="text-emerald-300 font-semibold">กลับสู่ STN_MW_MODE (Local MW)</div>
+                                <div class="text-[11px] text-slate-400">ใช้ Setpoint จาก <b>Actual MW ณ ตอนที่ปลดออก</b> | OFF DO 6006 &rarr; DI MWRD (ตามสเปกระบุส่ง 1 / Reset 0)</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // ==========================================
+        // 1. STATE MANAGEMENT & CONFIGURATION
+        // ==========================================
+        const state = {
+            ppaMW: 90.0,
+            actualMVAR: 12.50,
+            actualMW: 75.00,
+            cutOffRemote: true, // DI STN_High/Low_CO_SW: true = 1 (Remote), false = 0 (Local)
+            
+            // Plant Local Modes
+            localVQMode: 'MV', // 'KV', 'MV', 'PF', or 'NONE' (when Remote V/Q is active)
+            savedLocalVQModeBeforeRemote: 'MV',
+            localMWMode: true, // true = ON (1), false = OFF (0)
+            
+            // Active Tab ('KV', 'MVAR', 'PF', 'MW')
+            currentTab: 'KV',
+
+            // Calculated Limits
+            limits: {
+                KV: { low: 109.25, high: 120.75, unit: 'kV', step: 0.05, sliderMin: 105.0, sliderMax: 125.0 },
+                MVAR: { low: -43.59, high: 43.59, unit: 'MVAR', step: 0.5, sliderMin: -60.0, sliderMax: 60.0 },
+                PF: { low: -0.90, high: 0.90, unit: 'PF', step: 0.01, sliderMin: -1.00, sliderMax: 1.00 },
+                MW: { low: 0.00, high: 90.00, unit: 'MW', step: 0.5, sliderMin: -10.0, sliderMax: 110.0 }
+            },
+
+            // Per-mode Sequence State
+            modes: {
+                KV: {
+                    code: 'AGVC',
+                    name: 'Remote KV Control Sequence (AGVC)',
+                    doReady: 'DO 6003 (STN_NCC/BNCC KVRD)',
+                    diReady: 'DI STN_NCC/BNCC_KVRD',
+                    doActive: 'DO 6001 (PLC_SDCE-P AGVC)',
+                    diActive: 'DI PLC_SDCE-P AGVC',
+                    aoName: 'AO 9001 SDCE-P PLC_SDCE-P SPKV AGVC',
+                    aiInternal: 'AI SDCE-P STN_115KV SETTING',
+                    aiFeedback: 'AI PLC_SDCE-P SPKV [115 KV SETPOINT FEEDBACK KV (9001)]',
+                    aiLowTag: 'AI PLC_SDCE-P LKV [115 KV LOW LIMIT KV]',
+                    aiHighTag: 'AI PLC_SDCE-P HKV [115 KV HIGH LIMIT KV]',
+                    step: 0, // 0=Idle, 1=Ready ON, 2=Active ON, 3=Setpoint Control, 4=Active OFF (Fallback), 5=Ready OFF
+                    readyOn: false,
+                    activeOn: false,
+                    rawSetpoint: 115.00,
+                    clampedSetpoint: 115.00
+                },
+                MVAR: {
+                    code: 'VAGC',
+                    name: 'Remote MVAR Control Sequence (VAGC)',
+                    doReady: 'DO 6004 (STN_NCC/BNCC MVRD)',
+                    diReady: 'DI STN_NCC/BNCC_MVRD',
+                    doActive: 'DO 6002 (PLC_SDCE-P VAGC)',
+                    diActive: 'DI PLC_SDCE-P VAGC',
+                    aoName: 'AO 9002 SDCE-P PLC_SDCE-P SPMV VAGC',
+                    aiInternal: 'Internal MVAR Controller Target',
+                    aiFeedback: 'AI PLC_SDCE-P SPMV [MVAR SETPOINT FEEDBACK MVAR (9002)]',
+                    aiLowTag: 'AI PLC_SDCE-P LMV [LOW LIMIT MVAR @ 0.90 PF]',
+                    aiHighTag: 'AI PLC_SDCE-P HMV [HIGH LIMIT MVAR @ 0.90 PF]',
+                    step: 0,
+                    readyOn: false,
+                    activeOn: false,
+                    rawSetpoint: 15.00,
+                    clampedSetpoint: 15.00
+                },
+                PF: {
+                    code: 'RPFC',
+                    name: 'Remote PF Control Sequence (RPFC)',
+                    doReady: 'DO 6009 (STN_NCC/BNCC PFRD)',
+                    diReady: 'DI STN_NCC/BNCC_PFRD',
+                    doActive: 'DO 6008 (PLC_SDCE-P RPFC)',
+                    diActive: 'DI PLC_SDCE-P RPFC',
+                    aoName: 'AO 9004 SDCE-P PLC_SDCE-P SPPF RPFC',
+                    aiInternal: 'Internal PF Controller Target',
+                    aiFeedback: 'AI PLC_SDCE-P SPPF [PF SETPOINT FEEDBACK PF (9004)]',
+                    aiLowTag: 'Internal Plant Limit Low PF (-0.90)',
+                    aiHighTag: 'Internal Plant Limit High PF (+0.90)',
+                    step: 0,
+                    readyOn: false,
+                    activeOn: false,
+                    rawSetpoint: 0.95,
+                    clampedSetpoint: 0.90
+                },
+                MW: {
+                    code: 'AGC',
+                    name: 'Remote MW Control Sequence (AGC)',
+                    doReady: 'DO 6006 (STN_NCC/BNCC MWRD)',
+                    diReady: 'DI STN_NCC/BNCC_MWRD',
+                    doActive: 'DO 6005 (PLC_SDCE-P AGC)',
+                    diActive: 'DI PLC_SDCE-P AGC',
+                    aoName: 'AO 9003 SDCE-P PLC_SDCE-P SPMW AGC',
+                    aiInternal: 'Internal Governor / MW Target',
+                    aiFeedback: 'AI PLC_SDCE-P SPMW [MW SETPOINT FEEDBACK MW (9003)]',
+                    aiLowTag: 'AI PLC_SDCE-P LMW [LOW LIMIT MW = 0]',
+                    aiHighTag: 'AI PLC_SDCE-P HMW [HIGH LIMIT MW = PPA MW]',
+                    step: 0,
+                    readyOn: false,
+                    activeOn: false,
+                    rawSetpoint: 80.00,
+                    clampedSetpoint: 80.00
+                }
+            }
+        };
+
+        // ==========================================
+        // 2. DYNAMIC PPA MW & LIMIT CALCULATOR
+        // ==========================================
+        function updatePPACalculations() {
+            const inputEl = document.getElementById('ppa-mw-input');
+            let ppa = parseFloat(inputEl.value);
+            if (isNaN(ppa) || ppa <= 0) ppa = 1;
+            state.ppaMW = ppa;
+
+            // 1. KV Limits: 115 kV +/- 5%
+            const kvLow = 115 * 0.95; // 109.25
+            const kvHigh = 115 * 1.05; // 120.75
+            state.limits.KV.low = kvLow;
+            state.limits.KV.high = kvHigh;
+
+            // 2. MVAR Limits @ 0.90 PF of PPA MW: PPA * tan(acos(0.90))
+            const tanPhi = Math.tan(Math.acos(0.90)); // ~0.4843221
+            const mvarLim = ppa * tanPhi;
+            state.limits.MVAR.low = -mvarLim;
+            state.limits.MVAR.high = mvarLim;
+            state.limits.MVAR.sliderMin = -Math.ceil(mvarLim * 1.35);
+            state.limits.MVAR.sliderMax = Math.ceil(mvarLim * 1.35);
+
+            // 3. PF Limits: -0.90 to +0.90
+            state.limits.PF.low = -0.90;
+            state.limits.PF.high = 0.90;
+
+            // 4. MW Limits: 0 to PPA MW
+            state.limits.MW.low = 0.00;
+            state.limits.MW.high = ppa;
+            state.limits.MW.sliderMin = -Math.ceil(ppa * 0.1);
+            state.limits.MW.sliderMax = Math.ceil(ppa * 1.2);
+
+            // Update Calculator Cards UI
+            document.getElementById('calc-lkv').textContent = `${kvLow.toFixed(2)} kV`;
+            document.getElementById('calc-hkv').textContent = `${kvHigh.toFixed(2)} kV`;
+            document.getElementById('calc-lmv').textContent = `${(-mvarLim).toFixed(2)} MVAR`;
+            document.getElementById('calc-hmv').textContent = `+${mvarLim.toFixed(2)} MVAR`;
+            document.getElementById('calc-lmw').textContent = `0.00 MW`;
+            document.getElementById('calc-hmw').textContent = `${ppa.toFixed(2)} MW`;
+
+            // Update Summary Table cells
+            document.getElementById('tbl-lkv').textContent = `${kvLow.toFixed(2)} kV`;
+            document.getElementById('tbl-hkv').textContent = `${kvHigh.toFixed(2)} kV`;
+            document.getElementById('tbl-lmv').textContent = `${(-mvarLim).toFixed(2)} MVAR`;
+            document.getElementById('tbl-hmv').textContent = `+${mvarLim.toFixed(2)} MVAR`;
+            document.getElementById('tbl-hmw').textContent = `${ppa.toFixed(2)} MW`;
+
+            // Re-evaluate clamped setpoints for all modes
+            ['KV', 'MVAR', 'PF', 'MW'].forEach(m => {
+                recalculateModeClamping(m);
+            });
+
+            renderAll();
+        }
+
+        function updateActualValues() {
+            const mvVal = parseFloat(document.getElementById('actual-mv-input').value);
+            const mwVal = parseFloat(document.getElementById('actual-mw-input').value);
+            if (!isNaN(mvVal)) state.actualMVAR = mvVal;
+            if (!isNaN(mwVal)) state.actualMW = mwVal;
+            renderAll();
+        }
+
+        function recalculateModeClamping(modeKey) {
+            const m = state.modes[modeKey];
+            const lim = state.limits[modeKey];
+            let clamped = m.rawSetpoint;
+            if (clamped < lim.low) clamped = lim.low;
+            if (clamped > lim.high) clamped = lim.high;
+            m.clampedSetpoint = clamped;
+        }
+
+        // ==========================================
+        // 3. MASTER CUT-OFF & LOCAL MODES INTERLOCK
+        // ==========================================
+        function toggleCutOffSwitch() {
+            state.cutOffRemote = !state.cutOffRemote;
+
+            // If switched to Local (0), any active Remote mode is dropped back to Local
+            if (!state.cutOffRemote) {
+                ['KV', 'MVAR', 'PF'].forEach(k => {
+                    if (state.modes[k].activeOn || state.modes[k].readyOn) {
+                        state.modes[k].activeOn = false;
+                        state.modes[k].readyOn = false;
+                        state.modes[k].step = 0;
+                    }
+                });
+                if (state.modes.MW.activeOn || state.modes.MW.readyOn) {
+                    state.modes.MW.activeOn = false;
+                    state.modes.MW.readyOn = false;
+                    state.modes.MW.step = 0;
+                    state.localMWMode = true;
+                }
+                if (state.localVQMode === 'NONE') {
+                    state.localVQMode = 'MV';
+                }
+                setLogBanner(`สวิตช์ <b>DI STN_High/Low_CO_SW</b> ถูกปรับเป็น <b>Local (0)</b>: ตัดการควบคุมระยะไกลจาก NCC ทั้งหมด โรงไฟฟ้าควบคุมในโหมด Local เท่านั้น`, 'amber');
+            } else {
+                setLogBanner(`สวิตช์ <b>DI STN_High/Low_CO_SW</b> ถูกปรับเป็น <b>Remote (1)</b>: พร้อมรับคำสั่งควบคุมโหมด KV, MVAR, PF และ MW จากศูนย์ควบคุม NCC`, 'emerald');
+            }
+
+            renderAll();
+        }
+
+        // Mutual exclusion between KV, MV, PF in Local Mode
+        function selectLocalVQMode(vqMode) {
+            // Check if any Remote V/Q mode is currently active
+            if (state.modes.KV.activeOn || state.modes.MVAR.activeOn || state.modes.PF.activeOn) {
+                setLogBanner(`ไม่สามารถเปิดโหมด Local (${vqMode}) ได้ เนื่องจากขณะนี้โรงไฟฟ้ากำลังอยู่ในโหมดควบคุมระยะไกล (Remote V/Q Active) กรุณาปลดโหมด Remote ก่อน`, 'rose');
+                return;
+            }
+            state.localVQMode = vqMode;
+            setLogBanner(`โรงไฟฟ้าเลือกโหมดควบคุม Local เป็น <b>DI STN_${vqMode}_MODE = 1</b> (โหมด V/Q อื่นถูก Interlock เป็น 0 อัตโนมัติ)`, 'cyan');
+            renderAll();
+        }
+
+        // Independent Local MW Mode
+        function toggleLocalMWMode() {
+            if (state.modes.MW.activeOn) {
+                setLogBanner(`ไม่สามารถสลับ <b>DI STN_MW_MODE</b> ได้ เนื่องจากขณะนี้โหมด <b>Remote MW (AGC)</b> กำลังทำงานอยู่`, 'rose');
+                return;
+            }
+            state.localMWMode = !state.localMWMode;
+            setLogBanner(`สถานะ <b>DI STN_MW_MODE (Local MW)</b> เปลี่ยนเป็น <b>${state.localMWMode ? '1 (ON)' : '0 (OFF)'}</b> โดยทำงานเป็นอิสระร่วมกับโหมดแรงดัน/รีแอกทีฟได้`, 'emerald');
+            renderAll();
+        }
+
+        // ==========================================
+        // 4. SEQUENCE EXECUTION & FLOWCHART LOGIC
+        // ==========================================
+        function switchModeTab(modeKey) {
+            state.currentTab = modeKey;
+            syncSliderWithCurrentMode();
+            renderAll();
+        }
+
+        function syncSliderWithCurrentMode() {
+            const modeKey = state.currentTab;
+            const m = state.modes[modeKey];
+            const lim = state.limits[modeKey];
+            const slider = document.getElementById('sp-slider');
+            const numInput = document.getElementById('sp-number-input');
+
+            slider.min = lim.sliderMin;
+            slider.max = lim.sliderMax;
+            slider.step = lim.step;
+            slider.value = m.rawSetpoint;
+            numInput.step = lim.step;
+            numInput.value = m.rawSetpoint.toFixed(2);
+        }
+
+        function executeFlowStep(stepNumber) {
+            const modeKey = state.currentTab;
+            const m = state.modes[modeKey];
+
+            if (!state.cutOffRemote) {
+                setLogBanner(`คำสั่งถูกปฏิเสธ! สวิตช์ <b>DI STN_High/Low_CO_SW = 0 (Local)</b> กรุณาเปลี่ยนสวิตช์หลักเป็น <b>Remote = 1</b> ก่อนสั่งการจาก NCC`, 'rose');
+                return;
+            }
+
+            if (stepNumber === 1) {
+                // Step 1: NCC ON Ready DO -> Plant returns Ready DI = 1
+                m.readyOn = true;
+                m.step = 1;
+                setLogBanner(`[ขั้นที่ 1 - Ready] ศูนย์ควบคุม NCC สั่ง <b>ON ${m.doReady}</b> &rarr; โรงไฟฟ้าส่งสถานะพร้อมทำงาน <b>${m.diReady} = 1</b> กลับมา`, 'cyan');
+            } 
+            else if (stepNumber === 2) {
+                // Step 2: NCC ON Mode Active DO -> Plant returns Active DI = 1 & Drops Local Modes
+                if (!m.readyOn) {
+                    m.readyOn = true; // Auto-enable ready so user can test smoothly
+                }
+                m.activeOn = true;
+                m.step = 2;
+
+                if (modeKey === 'KV' || modeKey === 'MVAR' || modeKey === 'PF') {
+                    // Turn off any other Remote V/Q mode if active
+                    ['KV', 'MVAR', 'PF'].forEach(other => {
+                        if (other !== modeKey) {
+                            state.modes[other].activeOn = false;
+                            state.modes[other].readyOn = false;
+                            state.modes[other].step = 0;
+                        }
+                    });
+                    // Release Local KV/MV/PF mode, keep Local MW unchanged
+                    if (state.localVQMode !== 'NONE') {
+                        state.savedLocalVQModeBeforeRemote = state.localVQMode;
+                    }
+                    state.localVQMode = 'NONE';
+                    setLogBanner(`[ขั้นที่ 2 - Mode Active] NCC สั่ง <b>ON ${m.doActive}</b> &rarr; โรงไฟฟ้าส่ง <b>${m.diActive} = 1</b> โยกเข้าโหมด Remote ${modeKey} และ <b>ปลดโหมด Local (KV/MV/PF) ที่ใช้อยู่ทั้งหมด ยกเว้นโหมด MW</b> ที่ยังคงสถานะเดิม`, 'emerald');
+                } else if (modeKey === 'MW') {
+                    // Remote MW only drops Local MW mode; Local KV/MV/PF stay untouched
+                    state.localMWMode = false;
+                    setLogBanner(`[ขั้นที่ 2 - Mode Active] NCC สั่ง <b>ON ${m.doActive}</b> &rarr; โรงไฟฟ้าส่ง <b>${m.diActive} = 1</b> โยกเข้าโหมด Remote MW (AGC) และ <b>ปลดเฉพาะโหมด Local MW (STN_MW_MODE = 0) ส่วนโหมดอื่นๆ (KV/MVAR/PF) ยังคงอยู่ใน Local ตามเดิม</b>`, 'emerald');
+                }
+            }
+            else if (stepNumber === 3) {
+                // Step 3: Setpoint Control & Limit Checking
+                if (!m.readyOn) m.readyOn = true;
+                if (!m.activeOn) {
+                    executeFlowStep(2);
+                }
+                m.step = 3;
+                recalculateModeClamping(modeKey);
+                const lim = state.limits[modeKey];
+                setLogBanner(`[ขั้นที่ 3 - Setpoint & Feedback] ดึงค่า Setpoint จาก <b>${m.aoName} (${m.rawSetpoint.toFixed(2)} ${lim.unit})</b> ผ่านการตรวจสอบย่าน <b>[${lim.low.toFixed(2)} ถึง ${lim.high.toFixed(2)} ${lim.unit}]</b> ได้ค่าควบคุมจริง <b>${m.clampedSetpoint.toFixed(2)} ${lim.unit}</b> และส่งกลับ NCC ผ่าน <b>${m.aiFeedback}</b>`, 'cyan');
+            }
+            else if (stepNumber === 4) {
+                // Step 4: NCC OFF Mode Active DO -> Plant returns Active DI = 0 & Fallback to Local Mode
+                m.activeOn = false;
+                m.step = 4;
+
+                if (modeKey === 'KV' || modeKey === 'MVAR') {
+                    state.localVQMode = 'MV';
+                    setLogBanner(`[ขั้นที่ 4 - Deactivate Mode] NCC สั่ง <b>OFF ${m.doActive}</b> &rarr; โรงไฟฟ้าส่ง <b>${m.diActive} = 0</b> และ <b>สลับกลับไปยังโหมด STN_MV_MODE (Local MVAR Control)</b> โดยใช้ Local Setpoint MV จากค่าปัจจุบัน (${state.actualMVAR.toFixed(2)} MVAR) ในการควบคุม และคงโหมด MW Local ไว้หาก On อยู่`, 'amber');
+                } else if (modeKey === 'PF') {
+                    state.localVQMode = 'MV';
+                    setLogBanner(`[ขั้นที่ 4 - Deactivate Mode] NCC สั่ง <b>OFF ${m.doActive}</b> &rarr; โรงไฟฟ้าส่ง <b>${m.diActive} = 0</b> และ <b>สลับกลับไปยังโหมด STN_MV_MODE (Local MVAR Control)</b> และคงโหมด MW Local ไว้หาก On อยู่`, 'amber');
+                } else if (modeKey === 'MW') {
+                    state.localMWMode = true;
+                    setLogBanner(`[ขั้นที่ 4 - Deactivate Mode] NCC สั่ง <b>OFF ${m.doActive}</b> &rarr; โรงไฟฟ้าส่ง <b>${m.diActive} = 0</b> และ <b>กลับไปยังโหมด STN_MW_MODE (MW Mode Local = 1)</b> โดยใช้ Setpoint จากค่า <b>Actual MW ณ ตอนที่ปลดออก (${state.actualMW.toFixed(2)} MW)</b>`, 'amber');
+                }
+            }
+            else if (stepNumber === 5) {
+                // Step 5: NCC OFF Ready DO -> Plant returns Ready DI
+                if (m.activeOn) {
+                    executeFlowStep(4);
+                }
+                m.readyOn = false;
+                m.step = 5;
+                if (modeKey === 'MW') {
+                    setLogBanner(`[ขั้นที่ 5 - Reset Ready] NCC สั่ง <b>OFF ${m.doReady}</b> &rarr; จบกระบวนการ Remote MW Control (หมายเหตุ: เอกสารต้นฉบับระบุว่าส่ง DI STN_NCC/BNCC_MWRD 1 กลับมา / ในทางปฏิบัติเป็นการ Reset สถานะ Ready เป็น 0)`, 'cyan');
+                } else {
+                    setLogBanner(`[ขั้นที่ 5 - Reset Ready] NCC สั่ง <b>OFF ${m.doReady}</b> &rarr; โรงไฟฟ้าส่งสัญญาณ <b>${m.diReady} = 0</b> กลับมา จบกระบวนการควบคุมระยะไกลโดยสมบูรณ์`, 'cyan');
+                }
+            }
+
+            renderAll();
+        }
+
+        function toggleReadySignal() {
+            const m = state.modes[state.currentTab];
+            if (!m.readyOn) {
+                executeFlowStep(1);
+            } else {
+                executeFlowStep(5);
+            }
+        }
+
+        function toggleActiveSignal() {
+            const m = state.modes[state.currentTab];
+            if (!m.activeOn) {
+                executeFlowStep(2);
+            } else {
+                executeFlowStep(4);
+            }
+        }
+
+        function resetCurrentModeSequence() {
+            const modeKey = state.currentTab;
+            const m = state.modes[modeKey];
+            m.readyOn = false;
+            m.activeOn = false;
+            m.step = 0;
+
+            if (modeKey === 'MW') {
+                state.localMWMode = true;
+            } else {
+                state.localVQMode = 'MV';
+            }
+            setLogBanner(`รีเซ็ตลำดับการทำงานของโหมด <b>${m.name}</b> กลับสู่สถานะเริ่มต้น (IDLE) เรียบร้อยแล้ว`, 'cyan');
+            renderAll();
+        }
+
+        function handleSetpointChange(val) {
+            const num = parseFloat(val);
+            if (isNaN(num)) return;
+
+            const modeKey = state.currentTab;
+            const m = state.modes[modeKey];
+            m.rawSetpoint = num;
+            recalculateModeClamping(modeKey);
+
+            // Sync slider & input
+            document.getElementById('sp-slider').value = num;
+            document.getElementById('sp-number-input').value = num;
+
+            // If already active in step 2 or 3, highlight step 3
+            if (m.activeOn) {
+                m.step = 3;
+            }
+            renderAll();
+        }
+
+        function setLogBanner(htmlMessage, color = 'cyan') {
+            const banner = document.getElementById('sequence-log-banner');
+            const textEl = document.getElementById('sequence-log-text');
+            const dot = banner.querySelector('div');
+
+            const colorMap = {
+                cyan: 'bg-cyan-400',
+                emerald: 'bg-emerald-400',
+                amber: 'bg-amber-400',
+                rose: 'bg-rose-500'
+            };
+            dot.className = `w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${colorMap[color] || 'bg-cyan-400'}`;
+            textEl.innerHTML = htmlMessage;
+        }
+
+        // ==========================================
+        // 5. FLOWCHART GENERATOR FOR EACH MODE
+        // ==========================================
+        function getFlowStepsData(modeKey) {
+            const m = state.modes[modeKey];
+            const lim = state.limits[modeKey];
+
+            if (modeKey === 'KV') {
+                return [
+                    {
+                        stepNum: 1,
+                        phase: 'STEP 1 : READY HANDSHAKE',
+                        title: 'NCC ส่งคำสั่งเตรียมพร้อมควบคุมแรงดัน (KVRD)',
+                        nccAction: 'NCC &rarr; ON DO 6003 (STN_NCC/BNCC KVRD)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI STN_NCC/BNCC_KVRD = 1 กลับมา',
+                        detail: 'ตรวจสอบความพร้อมของวงจรควบคุมแรงดันระยะไกลระหว่างศูนย์ NCC และ PLC_SDCE-P'
+                    },
+                    {
+                        stepNum: 2,
+                        phase: 'STEP 2 : MODE ENGAGE & LOCAL INTERLOCK',
+                        title: 'โยกเข้าโหมด NCC Remote KV Control (AGVC)',
+                        nccAction: 'NCC &rarr; ON DO 6001 (PLC_SDCE-P AGVC)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI PLC_SDCE-P AGVC = 1 กลับมา',
+                        detail: 'โรงไฟฟ้าใช้ DO นี้โยกเข้าโหมด NCC Remote KV Control และปลดโหมด Local (KV / MVAR / PF) ที่ใช้อยู่ทั้งหมด ยกเว้นโหมด MW'
+                    },
+                    {
+                        stepNum: 3,
+                        phase: 'STEP 3 : SETPOINT CONTROL, LIMIT & FEEDBACK',
+                        title: `ดึง Setpoint ไปควบคุม 115 kV ภายใต้กรอบ ${lim.low.toFixed(2)} - ${lim.high.toFixed(2)} kV`,
+                        nccAction: `AO 9001 (SPKV AGVC) = ${m.rawSetpoint.toFixed(2)} kV`,
+                        plantResponse: `AI SDCE-P STN_115KV SETTING = ${m.clampedSetpoint.toFixed(2)} kV &rarr; ส่งกลับ AI PLC_SDCE-P SPKV (9001)`,
+                        detail: `จำกัดย่านควบคุมไม่ให้เกิน AI PLC_SDCE-P LKV (${lim.low.toFixed(2)} kV, -5%) และ AI PLC_SDCE-P HKV (${lim.high.toFixed(2)} kV, +5%)`
+                    },
+                    {
+                        stepNum: 4,
+                        phase: 'STEP 4 : DEACTIVATE & FALLBACK TO LOCAL MV',
+                        title: 'ปลดโหมด AGVC และกลับสู่โหมด Local MVAR Control',
+                        nccAction: 'NCC &rarr; OFF DO 6001 (PLC_SDCE-P AGVC)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI PLC_SDCE-P AGVC = 0 &rarr; เข้าสู่ STN_MV_MODE (Local MV)',
+                        detail: `ใช้ค่า Local Setpoint MV จากค่าปัจจุบัน (${state.actualMVAR.toFixed(2)} MVAR) ในการควบคุมโหมด และคงโหมด MW Mode Local หาก On อยู่`
+                    },
+                    {
+                        stepNum: 5,
+                        phase: 'STEP 5 : RESET READY SIGNAL',
+                        title: 'ปลดสัญญาณเตรียมพร้อม KVRD จบขั้นตอน',
+                        nccAction: 'NCC &rarr; OFF DO 6003 (STN_NCC/BNCC KVRD)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI STN_NCC/BNCC_KVRD = 0 กลับมา',
+                        detail: 'สิ้นสุด Sequence การควบคุมแรงดันระยะไกล (Remote KV Control)'
+                    }
+                ];
+            }
+            else if (modeKey === 'MVAR') {
+                return [
+                    {
+                        stepNum: 1,
+                        phase: 'STEP 1 : READY HANDSHAKE',
+                        title: 'NCC ส่งคำสั่งเตรียมพร้อมควบคุม MVAR (MVRD)',
+                        nccAction: 'NCC &rarr; ON DO 6004 (STN_NCC/BNCC MVRD)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI STN_NCC/BNCC_MVRD = 1 กลับมา',
+                        detail: 'ยืนยันความพร้อมของระบบควบคุมกำลังไฟฟ้ารีแอกทีฟระยะไกล'
+                    },
+                    {
+                        stepNum: 2,
+                        phase: 'STEP 2 : MODE ENGAGE & LOCAL INTERLOCK',
+                        title: 'โยกเข้าโหมด NCC Remote MVAR Control (VAGC)',
+                        nccAction: 'NCC &rarr; ON DO 6002 (PLC_SDCE-P VAGC)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI PLC_SDCE-P VAGC = 1 กลับมา',
+                        detail: 'โรงไฟฟ้าโยกเข้าโหมด NCC Remote MVAR Control และปลดโหมด Local (KV / MVAR / PF) ที่ใช้อยู่ ยกเว้นโหมด MW'
+                    },
+                    {
+                        stepNum: 3,
+                        phase: 'STEP 3 : SETPOINT CONTROL, LIMIT & FEEDBACK',
+                        title: `ดึง Setpoint MVAR ภายใต้กรอบ @ 0.90 PF (${lim.low.toFixed(2)} ถึง +${lim.high.toFixed(2)} MVAR)`,
+                        nccAction: `AO 9002 (SPMV VAGC) = ${m.rawSetpoint.toFixed(2)} MVAR`,
+                        plantResponse: `ควบคุมที่ ${m.clampedSetpoint.toFixed(2)} MVAR &rarr; ส่งกลับ AI PLC_SDCE-P SPMV (9002)`,
+                        detail: `จำกัดย่านผ่าน AI PLC_SDCE-P LMV (${lim.low.toFixed(2)} MVAR) สำหรับด้านต่ำ และ HMV (+${lim.high.toFixed(2)} MVAR) สำหรับด้านสูง (@ 0.90 PF ของ PPA ${state.ppaMW} MW)`
+                    },
+                    {
+                        stepNum: 4,
+                        phase: 'STEP 4 : DEACTIVATE & FALLBACK TO LOCAL MV',
+                        title: 'ปลดโหมด VAGC และกลับสู่โหมด Local MVAR Control',
+                        nccAction: 'NCC &rarr; OFF DO 6002 (PLC_SDCE-P VAGC)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI PLC_SDCE-P VAGC = 0 &rarr; เข้าสู่ STN_MV_MODE (Local MV)',
+                        detail: `ใช้ค่า Local Setpoint MV จากค่าปัจจุบัน (${state.actualMVAR.toFixed(2)} MVAR) ในการควบคุม และคงโหมด MW Mode Local หาก On อยู่`
+                    },
+                    {
+                        stepNum: 5,
+                        phase: 'STEP 5 : RESET READY SIGNAL',
+                        title: 'ปลดสัญญาณเตรียมพร้อม MVRD จบขั้นตอน',
+                        nccAction: 'NCC &rarr; OFF DO 6004 (STN_NCC/BNCC MVRD)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI STN_NCC/BNCC_MVRD = 0 กลับมา',
+                        detail: 'สิ้นสุด Sequence การควบคุมกำลังไฟฟ้ารีแอกทีฟระยะไกล (Remote MVAR Control)'
+                    }
+                ];
+            }
+            else if (modeKey === 'PF') {
+                return [
+                    {
+                        stepNum: 1,
+                        phase: 'STEP 1 : READY HANDSHAKE',
+                        title: 'NCC ส่งคำสั่งเตรียมพร้อมควบคุม Power Factor (PFRD)',
+                        nccAction: 'NCC &rarr; ON DO 6009 (STN_NCC/BNCC PFRD)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI STN_NCC/BNCC_PFRD = 1 กลับมา',
+                        detail: 'ยืนยันความพร้อมของระบบควบคุม Power Factor ระยะไกล'
+                    },
+                    {
+                        stepNum: 2,
+                        phase: 'STEP 2 : MODE ENGAGE & LOCAL INTERLOCK',
+                        title: 'โยกเข้าโหมด NCC Remote PF Control (RPFC)',
+                        nccAction: 'NCC &rarr; ON DO 6008 (PLC_SDCE-P RPFC)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI PLC_SDCE-P RPFC = 1 กลับมา',
+                        detail: 'โรงไฟฟ้าโยกเข้าโหมด NCC Remote PF Control และปลดโหมด Local (KV / MVAR / PF) ที่ใช้อยู่ ยกเว้นโหมด MW'
+                    },
+                    {
+                        stepNum: 3,
+                        phase: 'STEP 3 : SETPOINT CONTROL, LIMIT & FEEDBACK',
+                        title: 'ดึง Setpoint PF ไปควบคุมภายใต้ย่านจำกัดภายในโรงไฟฟ้า (-0.90 ถึง +0.90 PF)',
+                        nccAction: `AO 9004 (SPPF RPFC) = ${m.rawSetpoint.toFixed(2)} PF`,
+                        plantResponse: `ควบคุมที่ ${m.clampedSetpoint.toFixed(2)} PF &rarr; ส่งกลับ AI PLC_SDCE-P SPPF (9004)`,
+                        detail: 'จำกัดย่านการส่ง Setpoint ภายในโรงไฟฟ้าผ่าน Limit Low PF (-0.90) และ Limit High PF (+0.90)'
+                    },
+                    {
+                        stepNum: 4,
+                        phase: 'STEP 4 : DEACTIVATE & FALLBACK TO LOCAL MV',
+                        title: 'ปลดโหมด RPFC และกลับสู่โหมด Local MVAR Control',
+                        nccAction: 'NCC &rarr; OFF DO 6008 (PLC_SDCE-P RPFC)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI PLC_SDCE-P RPFC = 0 &rarr; เข้าสู่ STN_MV_MODE (Local MV)',
+                        detail: 'โรงไฟฟ้ากลับไปยังโหมด STN_MV_MODE (Local MV Control) และโหมด MW Mode Local หาก On โหมดดังกล่าวอยู่'
+                    },
+                    {
+                        stepNum: 5,
+                        phase: 'STEP 5 : RESET READY SIGNAL',
+                        title: 'ปลดสัญญาณเตรียมพร้อม PFRD จบขั้นตอน',
+                        nccAction: 'NCC &rarr; OFF DO 6009 (STN_NCC/BNCC PFRD)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI STN_NCC/BNCC_PFRD = 0 กลับมา',
+                        detail: 'สิ้นสุด Sequence การควบคุม Power Factor ระยะไกล (Remote PF Control)'
+                    }
+                ];
+            }
+            else {
+                // MW Mode (AGC)
+                return [
+                    {
+                        stepNum: 1,
+                        phase: 'STEP 1 : READY HANDSHAKE',
+                        title: 'NCC ส่งคำสั่งเตรียมพร้อมควบคุมกำลังไฟฟ้าจริง (MWRD)',
+                        nccAction: 'NCC &rarr; ON DO 6006 (STN_NCC/BNCC MWRD)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI STN_NCC/BNCC_MWRD = 1 กลับมา',
+                        detail: 'ยืนยันความพร้อมของระบบควบคุมกำลังไฟฟ้าจริง (Automatic Generation Control - AGC)'
+                    },
+                    {
+                        stepNum: 2,
+                        phase: 'STEP 2 : MODE ENGAGE & SELECTIVE INTERLOCK',
+                        title: 'โยกเข้าโหมด NCC Remote MW Control (AGC)',
+                        nccAction: 'NCC &rarr; ON DO 6005 (PLC_SDCE-P AGC)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI PLC_SDCE-P AGC = 1 กลับมา',
+                        detail: 'ปลดเฉพาะโหมด Local MW (STN_MW_MODE = 0) ที่ทางโรงใช้ควบคุมอยู่ ส่วนโหมดอื่นๆ (KV / MVAR / PF) จะยังคงอยู่ในสถานะเดิม'
+                    },
+                    {
+                        stepNum: 3,
+                        phase: 'STEP 3 : SETPOINT CONTROL, LIMIT & FEEDBACK',
+                        title: `ดึง Setpoint MW ไปควบคุมภายใต้กรอบ 0.00 ถึง ${lim.high.toFixed(2)} MW (PPA MW)`,
+                        nccAction: `AO 9003 (SPMW AGC) = ${m.rawSetpoint.toFixed(2)} MW`,
+                        plantResponse: `ควบคุมที่ ${m.clampedSetpoint.toFixed(2)} MW &rarr; ส่งกลับ AI PLC_SDCE-P SPMW (9003)`,
+                        detail: `จำกัดย่านผ่าน AI PLC_SDCE-P LMW (0.00 MW) สำหรับด้านต่ำ และ AI PLC_SDCE-P HMW (${lim.high.toFixed(2)} MW = PPA MW) สำหรับด้านสูง`
+                    },
+                    {
+                        stepNum: 4,
+                        phase: 'STEP 4 : DEACTIVATE & BUMPLESS TRANSFER TO ACTUAL MW',
+                        title: 'ปลดโหมด AGC และกลับสู่โหมด Local MW โดยยึดค่า Actual MW ณ ตอนนั้น',
+                        nccAction: 'NCC &rarr; OFF DO 6005 (PLC_SDCE-P AGC)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI PLC_SDCE-P AGC = 0 &rarr; เข้าสู่ STN_MW_MODE (Local MW)',
+                        detail: `ใช้ค่า Setpoint จาก Actual MW ณ ตอนที่ปลดออก (${state.actualMW.toFixed(2)} MW) เพื่อควบคุมต่อเนื่องแบบไร้รอยต่อ (Bumpless Transfer)`
+                    },
+                    {
+                        stepNum: 5,
+                        phase: 'STEP 5 : RESET READY SIGNAL',
+                        title: 'ปลดสัญญาณเตรียมพร้อม MWRD จบขั้นตอน',
+                        nccAction: 'NCC &rarr; OFF DO 6006 (STN_NCC/BNCC MWRD)',
+                        plantResponse: 'โรงไฟฟ้าส่ง DI STN_NCC/BNCC_MWRD กลับมา (ตามข้อกำหนดระบุส่ง 1 / Reset = 0)',
+                        detail: 'สิ้นสุด Sequence การควบคุมกำลังไฟฟ้าจริงระยะไกล (Remote MW Control)'
+                    }
+                ];
+            }
+        }
+
+        // ==========================================
+        // 6. UI RENDERING ENGINE
+        // ==========================================
+        function renderAll() {
+            renderHeaderAndInterlockPanel();
+            renderModeTabs();
+            renderFlowchart();
+            renderScadaRightPanel();
+        }
+
+        function renderHeaderAndInterlockPanel() {
+            // Cut-off Switch
+            const coLed = document.getElementById('co-sw-led');
+            const headerCoLed = document.getElementById('header-co-led');
+            const headerCoText = document.getElementById('header-co-text');
+            const coDesc = document.getElementById('co-sw-desc');
+            const coBtn = document.getElementById('co-sw-btn');
+
+            if (state.cutOffRemote) {
+                coLed.className = 'w-4 h-4 rounded-full led-on-green';
+                headerCoLed.className = 'w-3 h-3 rounded-full led-on-green';
+                headerCoText.textContent = 'REMOTE (1)';
+                headerCoText.className = 'text-xs font-mono font-bold text-emerald-400';
+                coDesc.textContent = 'สถานะ: 1 (REMOTE ENABLED - อนุญาตให้ NCC สั่งการ)';
+                coDesc.className = 'text-xs text-emerald-400 font-medium';
+                coBtn.textContent = 'REMOTE = 1';
+                coBtn.className = 'px-4 py-2 rounded-xl font-mono text-xs font-bold transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 border border-emerald-400/40';
+            } else {
+                coLed.className = 'w-4 h-4 rounded-full led-on-amber';
+                headerCoLed.className = 'w-3 h-3 rounded-full led-on-amber';
+                headerCoText.textContent = 'LOCAL (0)';
+                headerCoText.className = 'text-xs font-mono font-bold text-amber-400';
+                coDesc.textContent = 'สถานะ: 0 (LOCAL ONLY - ตัดการควบคุมจาก NCC)';
+                coDesc.className = 'text-xs text-amber-400 font-medium';
+                coBtn.textContent = 'LOCAL = 0';
+                coBtn.className = 'px-4 py-2 rounded-xl font-mono text-xs font-bold transition-all bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/20 border border-amber-400/40';
+            }
+
+            // Local V/Q Mode Cards
+            const vqList = [
+                { key: 'KV', btn: 'btn-local-kv', led: 'led-local-kv', status: 'status-local-kv', color: 'cyan' },
+                { key: 'MV', btn: 'btn-local-mv', led: 'led-local-mv', status: 'status-local-mv', color: 'amber' },
+                { key: 'PF', btn: 'btn-local-pf', led: 'led-local-pf', status: 'status-local-pf', color: 'purple' }
+            ];
+
+            vqList.forEach(item => {
+                const isOn = state.localVQMode === item.key;
+                const btnEl = document.getElementById(item.btn);
+                const ledEl = document.getElementById(item.led);
+                const stEl = document.getElementById(item.status);
+
+                if (isOn) {
+                    btnEl.className = `p-3 rounded-xl border text-left transition-all flex flex-col justify-between bg-slate-950 border-amber-500/60 shadow-lg shadow-amber-500/10`;
+                    ledEl.className = 'w-3 h-3 rounded-full led-on-amber';
+                    stEl.textContent = 'STATUS: 1 (ON)';
+                    stEl.className = 'text-[11px] font-mono text-amber-400 font-bold mt-1';
+                } else {
+                    btnEl.className = 'p-3 rounded-xl border text-left transition-all flex flex-col justify-between bg-slate-950 border-slate-800 hover:border-slate-700 opacity-75';
+                    ledEl.className = 'w-3 h-3 rounded-full led-off';
+                    stEl.textContent = 'STATUS: 0 (OFF)';
+                    stEl.className = 'text-[11px] font-mono text-slate-500 mt-1';
+                }
+            });
+
+            // Local MW Mode Card
+            const mwBtn = document.getElementById('btn-local-mw');
+            const mwLed = document.getElementById('led-local-mw');
+            const mwSt = document.getElementById('status-local-mw');
+            if (state.localMWMode) {
+                mwBtn.className = 'p-3 rounded-xl border text-left transition-all flex flex-col justify-between bg-slate-950 border-emerald-500/60 shadow-lg shadow-emerald-500/10';
+                mwLed.className = 'w-3 h-3 rounded-full led-on-green';
+                mwSt.textContent = 'STATUS: 1 (ON)';
+                mwSt.className = 'text-[11px] font-mono text-emerald-400 font-bold mt-1';
+            } else {
+                mwBtn.className = 'p-3 rounded-xl border text-left transition-all flex flex-col justify-between bg-slate-950 border-slate-800 hover:border-slate-700 opacity-75';
+                mwLed.className = 'w-3 h-3 rounded-full led-off';
+                mwSt.textContent = 'STATUS: 0 (OFF)';
+                mwSt.className = 'text-[11px] font-mono text-slate-500 mt-1';
+            }
+
+            // Header active mode summaries
+            const headerVQ = document.getElementById('header-vq-mode');
+            if (state.modes.KV.activeOn) {
+                headerVQ.textContent = 'REMOTE KV (AGVC)';
+                headerVQ.className = 'text-xs font-mono font-bold text-cyan-400';
+            } else if (state.modes.MVAR.activeOn) {
+                headerVQ.textContent = 'REMOTE MVAR (VAGC)';
+                headerVQ.className = 'text-xs font-mono font-bold text-emerald-400';
+            } else if (state.modes.PF.activeOn) {
+                headerVQ.textContent = 'REMOTE PF (RPFC)';
+                headerVQ.className = 'text-xs font-mono font-bold text-purple-400';
+            } else {
+                headerVQ.textContent = `LOCAL ${state.localVQMode}_MODE`;
+                headerVQ.className = 'text-xs font-mono font-bold text-amber-400';
+            }
+
+            const headerMW = document.getElementById('header-mw-mode');
+            if (state.modes.MW.activeOn) {
+                headerMW.textContent = 'REMOTE MW (AGC)';
+                headerMW.className = 'text-xs font-mono font-bold text-cyan-400';
+            } else {
+                headerMW.textContent = state.localMWMode ? 'LOCAL MW_MODE (1)' : 'MW OFF (0)';
+                headerMW.className = state.localMWMode ? 'text-xs font-mono font-bold text-emerald-400' : 'text-xs font-mono font-bold text-slate-500';
+            }
+
+            document.getElementById('local-sp-summary').textContent = 
+                `Local MV SP = ${state.actualMVAR.toFixed(2)} MVAR | Actual/Local MW SP = ${state.actualMW.toFixed(2)} MW`;
+        }
+
+        function renderModeTabs() {
+            const tabConfig = [
+                { key: 'KV', activeBorder: 'border-cyan-400 bg-cyan-500/15', badgeColor: 'bg-cyan-500/20 text-cyan-300' },
+                { key: 'MVAR', activeBorder: 'border-emerald-400 bg-emerald-500/15', badgeColor: 'bg-emerald-500/20 text-emerald-300' },
+                { key: 'PF', activeBorder: 'border-purple-400 bg-purple-500/15', badgeColor: 'bg-purple-500/20 text-purple-300' },
+                { key: 'MW', activeBorder: 'border-amber-400 bg-amber-500/15', badgeColor: 'bg-amber-500/20 text-amber-300' }
+            ];
+
+            tabConfig.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t.key}`);
+                const badge = document.getElementById(`tab-badge-${t.key}`);
+                const m = state.modes[t.key];
+
+                if (state.currentTab === t.key) {
+                    btn.className = `mode-tab-btn p-3.5 rounded-xl border text-left transition-all text-white shadow-lg ${t.activeBorder}`;
+                    badge.textContent = m.activeOn ? 'REMOTE ACTIVE' : 'กำลังแสดง Flow';
+                    badge.className = `px-2 py-0.5 text-[10px] font-mono rounded font-bold ${t.badgeColor}`;
+                } else {
+                    btn.className = 'mode-tab-btn p-3.5 rounded-xl border text-left transition-all bg-slate-900/90 border-slate-800 hover:border-slate-700 text-slate-300';
+                    badge.textContent = m.activeOn ? 'ACTIVE (1)' : 'คลิกเพื่อดู Flow';
+                    badge.className = m.activeOn 
+                        ? 'px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-500/20 text-emerald-300 font-bold'
+                        : 'px-2 py-0.5 text-[10px] font-mono rounded bg-slate-800 text-slate-400';
+                }
+            });
+        }
+
+        function renderFlowchart() {
+            const modeKey = state.currentTab;
+            const m = state.modes[modeKey];
+            const steps = getFlowStepsData(modeKey);
+
+            document.getElementById('flow-subtitle').textContent = `INTERACTIVE FLOWCHART : ${m.code} (${modeKey} MODE)`;
+            document.getElementById('flow-title').textContent = m.name;
+
+            const stepLabels = {
+                0: 'รอคำสั่งเริ่มต้น (IDLE)',
+                1: 'ขั้นที่ 1: เตรียมพร้อมทำงาน (READY = 1)',
+                2: `ขั้นที่ 2: โยกเข้าโหมด ${m.code} สำเร็จ (ACTIVE = 1)`,
+                3: `ขั้นที่ 3: กำลังควบคุมค่า Setpoint & Feedback (${m.clampedSetpoint.toFixed(2)} ${state.limits[modeKey].unit})`,
+                4: 'ขั้นที่ 4: ปลดโหมด Remote กลับสู่โหมด Local (FALLBACK)',
+                5: 'ขั้นที่ 5: รีเซ็ตสัญญาณเตรียมพร้อม (COMPLETED)'
+            };
+            document.getElementById('flow-current-step-badge').textContent = stepLabels[m.step] || stepLabels[0];
+
+            // Build Flowchart HTML
+            const container = document.getElementById('flowchart-nodes-container');
+            let html = '';
+
+            steps.forEach((s, idx) => {
+                const isCurrent = m.step === s.stepNum;
+                const isPassed = m.step > s.stepNum;
+                
+                let nodeStateClass = 'border-slate-800 bg-slate-900/75 hover:border-slate-600';
+                let badgeClass = 'bg-slate-800 text-slate-400';
+                let statusIcon = `<span class="w-6 h-6 rounded-full bg-slate-800 text-slate-400 font-mono text-xs font-bold flex items-center justify-center">${s.stepNum}</span>`;
+
+                if (isCurrent) {
+                    nodeStateClass = s.stepNum >= 4 ? 'flow-node-deactivated' : 'flow-node-active bg-slate-900';
+                    badgeClass = s.stepNum >= 4 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+                    statusIcon = `<span class="w-6 h-6 rounded-full bg-cyan-500 text-slate-950 font-mono text-xs font-bold flex items-center justify-center shadow-lg shadow-cyan-500/50">${s.stepNum}</span>`;
+                } else if (isPassed) {
+                    nodeStateClass = 'flow-node-completed';
+                    badgeClass = 'bg-emerald-500/20 text-emerald-300';
+                    statusIcon = `<span class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 font-mono text-xs font-bold flex items-center justify-center">&check;</span>`;
+                }
+
+                html += `
+                    <div onclick="executeFlowStep(${s.stepNum})" class="flow-node cursor-pointer rounded-xl border-2 p-3.5 transition-all ${nodeStateClass}">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                            <div class="flex items-center gap-2.5">
+                                ${statusIcon}
+                                <span class="text-[11px] font-mono font-bold uppercase px-2 py-0.5 rounded ${badgeClass}">${s.phase}</span>
+                            </div>
+                            <span class="text-[11px] font-mono text-slate-400">คลิกเพื่อจำลองขั้นที่ ${s.stepNum}</span>
+                        </div>
+                        <div class="pl-8">
+                            <h4 class="text-sm font-bold text-white">${s.title}</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-xs font-mono">
+                                <div class="bg-slate-950/90 px-2.5 py-1.5 rounded-lg border border-slate-800 text-cyan-300">
+                                    <span class="text-[10px] text-slate-500 block">NCC ACTION:</span>
+                                    ${s.nccAction}
+                                </div>
+                                <div class="bg-slate-950/90 px-2.5 py-1.5 rounded-lg border border-slate-800 text-emerald-300">
+                                    <span class="text-[10px] text-slate-500 block">PLANT RESPONSE (PLC_SDCE-P):</span>
+                                    ${s.plantResponse}
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-300 mt-2 leading-relaxed">${s.detail}</p>
+                        </div>
+                    </div>
+                `;
+
+                if (idx < steps.length - 1) {
+                    const connClass = isPassed ? 'completed' : (isCurrent ? 'active' : '');
+                    html += `<div class="flow-connector ${connClass}"></div>`;
+                }
+            });
+
+            container.innerHTML = html;
+
+            // Highlight Quick Step Buttons
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`step-btn-${i}`);
+                if (m.step === i) {
+                    btn.className = 'px-2.5 py-2 rounded-lg font-mono text-xs font-bold bg-cyan-600 text-white border border-cyan-400 shadow-lg shadow-cyan-500/20 transition';
+                } else if (m.step > i) {
+                    btn.className = 'px-2.5 py-2 rounded-lg font-mono text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 transition';
+                } else {
+                    btn.className = 'px-2.5 py-2 rounded-lg font-mono text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition';
+                }
+            }
+        }
+
+        function renderScadaRightPanel() {
+            const modeKey = state.currentTab;
+            const m = state.modes[modeKey];
+            const lim = state.limits[modeKey];
+
+            document.getElementById('io-mode-tag').textContent = `${m.code} (${modeKey})`;
+
+            // 1. Digital I/O Ready Pair
+            document.getElementById('scada-do-ready-name').textContent = m.doReady;
+            document.getElementById('scada-di-ready-name').textContent = m.diReady;
+            document.getElementById('scada-do-ready-val').textContent = m.readyOn ? '1' : '0';
+            document.getElementById('scada-di-ready-val').textContent = m.readyOn ? '1' : '0';
+            document.getElementById('scada-do-ready-led').className = m.readyOn ? 'w-3 h-3 rounded-full led-on-cyan' : 'w-3 h-3 rounded-full led-off';
+            document.getElementById('scada-di-ready-led').className = m.readyOn ? 'w-3 h-3 rounded-full led-on-green' : 'w-3 h-3 rounded-full led-off';
+
+            const btnReady = document.getElementById('btn-toggle-ready');
+            btnReady.textContent = m.readyOn ? 'สั่ง OFF Ready (ขั้นที่ 5)' : 'สั่ง ON Ready (ขั้นที่ 1)';
+            btnReady.className = m.readyOn 
+                ? 'px-2.5 py-1 rounded text-[11px] font-mono font-bold bg-rose-600/80 hover:bg-rose-600 text-white border border-rose-400/40 transition'
+                : 'px-2.5 py-1 rounded text-[11px] font-mono font-bold bg-cyan-600 hover:bg-cyan-500 text-white border border-cyan-400/40 transition';
+
+            // 2. Digital I/O Active Pair
+            document.getElementById('scada-do-active-name').textContent = m.doActive;
+            document.getElementById('scada-di-active-name').textContent = m.diActive;
+            document.getElementById('scada-do-active-val').textContent = m.activeOn ? '1' : '0';
+            document.getElementById('scada-di-active-val').textContent = m.activeOn ? '1' : '0';
+            document.getElementById('scada-do-active-led').className = m.activeOn ? 'w-3 h-3 rounded-full led-on-cyan' : 'w-3 h-3 rounded-full led-off';
+            document.getElementById('scada-di-active-led').className = m.activeOn ? 'w-3 h-3 rounded-full led-on-green' : 'w-3 h-3 rounded-full led-off';
+
+            const btnActive = document.getElementById('btn-toggle-active');
+            btnActive.textContent = m.activeOn ? 'สั่ง OFF Mode (ขั้นที่ 4)' : 'สั่ง ON Mode (ขั้นที่ 2)';
+            btnActive.className = m.activeOn 
+                ? 'px-2.5 py-1 rounded text-[11px] font-mono font-bold bg-amber-600 hover:bg-amber-500 text-white border border-amber-400/40 transition'
+                : 'px-2.5 py-1 rounded text-[11px] font-mono font-bold bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/40 transition';
+
+            // 3. Setpoint & Limit Clamping Panel
+            document.getElementById('sp-ao-label').textContent = m.aoName;
+            document.getElementById('sp-unit-label').textContent = lim.unit;
+            document.getElementById('sp-low-limit-label').textContent = `Low Limit: ${lim.low.toFixed(2)} ${lim.unit}`;
+            document.getElementById('sp-high-limit-label').textContent = `High Limit: ${lim.high.toFixed(2)} ${lim.unit}`;
+
+            const isLowClamped = m.rawSetpoint < lim.low;
+            const isHighClamped = m.rawSetpoint > lim.high;
+            const badge = document.getElementById('sp-limit-status-badge');
+            const bar = document.getElementById('sp-progress-bar');
+
+            if (isLowClamped) {
+                badge.textContent = `CLAMPED AT LOW LIMIT (${lim.low.toFixed(2)} ${lim.unit})`;
+                badge.className = 'px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/40';
+                bar.className = 'h-full bg-amber-500 transition-all duration-150';
+                bar.style.width = '0%';
+            } else if (isHighClamped) {
+                badge.textContent = `CLAMPED AT HIGH LIMIT (${lim.high.toFixed(2)} ${lim.unit})`;
+                badge.className = 'px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-rose-500/20 text-rose-300 border border-rose-500/40';
+                bar.className = 'h-full bg-rose-500 transition-all duration-150';
+                bar.style.width = '100%';
+            } else {
+                badge.textContent = 'WITHIN LIMIT (อยู่ในย่านควบคุม)';
+                badge.className = 'px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                bar.className = 'h-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-150';
+                const pct = ((m.clampedSetpoint - lim.low) / (lim.high - lim.low)) * 100;
+                bar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+            }
+
+            // Telemetry Readout Rows
+            document.getElementById('readout-raw-ao').textContent = `${m.rawSetpoint.toFixed(2)} ${lim.unit}`;
+            document.getElementById('readout-target-name').textContent = `2. ${m.aiInternal}:`;
+            document.getElementById('readout-clamped-target').textContent = `${m.clampedSetpoint.toFixed(2)} ${lim.unit}`;
+            document.getElementById('readout-fb-name').textContent = `3. ${m.aiFeedback}:`;
+            document.getElementById('readout-fb-ai').textContent = `${m.clampedSetpoint.toFixed(2)} ${lim.unit}`;
+
+            // Fallback description box
+            const fallbackEl = document.getElementById('fallback-desc-box');
+            if (modeKey === 'KV') {
+                fallbackEl.innerHTML = `หาก NCC สั่ง <b>OFF DO 6001 (PLC_SDCE-P AGVC)</b> โรงไฟฟ้าจะส่ง <b>DI PLC_SDCE-P AGVC = 0</b> และกลับไปยังโหมด <b>STN_MV_MODE (Local MV Control)</b> โดยใช้ Local Setpoint MV จากค่าปัจจุบัน (<b>${state.actualMVAR.toFixed(2)} MVAR</b>) ในการควบคุม และคงโหมด MW Mode Local หาก On อยู่ จากนั้นเมื่อ NCC สั่ง <b>OFF DO 6003 (KVRD)</b> โรงไฟฟ้าจะส่ง <b>DI STN_NCC/BNCC_KVRD = 0</b> กลับมา`;
+            } else if (modeKey === 'MVAR') {
+                fallbackEl.innerHTML = `หาก NCC สั่ง <b>OFF DO 6002 (PLC_SDCE-P VAGC)</b> โรงไฟฟ้าจะส่ง <b>DI PLC_SDCE-P VAGC = 0</b> และกลับไปยังโหมด <b>STN_MV_MODE (Local MV Control)</b> โดยใช้ Local Setpoint MV จากค่าปัจจุบัน (<b>${state.actualMVAR.toFixed(2)} MVAR</b>) ในการควบคุม และคงโหมด MW Mode Local หาก On อยู่ จากนั้นเมื่อ NCC สั่ง <b>OFF DO 6004 (MVRD)</b> โรงไฟฟ้าจะส่ง <b>DI STN_NCC/BNCC_MVRD = 0</b> กลับมา`;
+            } else if (modeKey === 'PF') {
+                fallbackEl.innerHTML = `หาก NCC สั่ง <b>OFF DO 6008 (PLC_SDCE-P RPFC)</b> โรงไฟฟ้าจะส่ง <b>DI PLC_SDCE-P RPFC = 0</b> และกลับไปยังโหมด <b>STN_MV_MODE (Local MV Control)</b> และโหมด MW Mode Local หาก On โหมดดังกล่าวอยู่ จากนั้นเมื่อ NCC สั่ง <b>OFF DO 6009 (PFRD)</b> โรงไฟฟ้าจะส่ง <b>DI STN_NCC/BNCC_PFRD = 0</b> กลับมา`;
+            } else {
+                fallbackEl.innerHTML = `หาก NCC สั่ง <b>OFF DO 6005 (PLC_SDCE-P AGC)</b> โรงไฟฟ้าจะส่ง <b>DI PLC_SDCE-P AGC = 0</b> และกลับไปยังโหมด <b>STN_MW_MODE (MW Mode Local)</b> โดยใช้ Setpoint จากค่า <b>Actual MW ณ ตอนนั้นที่ปลดออก (${state.actualMW.toFixed(2)} MW)</b> ถัดมาเมื่อ NCC สั่ง <b>OFF DO 6006 (MWRD)</b> โรงไฟฟ้าจะส่งสถานะ <b>DI STN_NCC/BNCC_MWRD</b> กลับมา`;
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            updatePPACalculations();
+            syncSliderWithCurrentMode();
+            renderAll();
+        };
+    </script>
 </body>
 </html>
